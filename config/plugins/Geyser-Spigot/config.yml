@@ -1,0 +1,73 @@
+# --------------------------------
+# Geyser Configuration File
+#
+# A bridge between Minecraft: Bedrock Edition and Minecraft: Java Edition.
+#
+# GitHub: https://github.com/GeyserMC/Geyser
+# Discord: https://discord.gg/geysermc
+# Wiki: https://geysermc.org/wiki
+# --------------------------------
+
+bedrock:
+  address: 0.0.0.0
+  port: 19132
+  clone-remote-port: false
+
+java:
+  auth-type: floodgate
+
+motd:
+  primary-motd: yourssu 2026
+  secondary-motd: Bedrock via Geyser
+  passthrough-motd: true
+  max-players: 100
+  passthrough-player-counts: true
+  integrated-ping-passthrough: true
+  ping-passthrough-interval: 3
+
+gameplay:
+  server-name: yourssu 2026
+  cooldown-type: crosshair
+  command-suggestions: true
+  show-coordinates: true
+  disable-bedrock-scaffolding: false
+  nether-roof-workaround: false
+  emotes-enabled: true
+  block-legacy-codes: true
+  unusable-space-block: minecraft:barrier
+  enable-custom-content: true
+  force-resource-packs: true
+  enable-integrated-pack: true
+  # true = Themis 안티치트 핑 측정 정확도 향상. 타임아웃 민감한 경우 false로
+  forward-player-ping: true
+  xbox-achievements-enabled: false
+  max-visible-custom-skulls: 128
+  custom-skull-render-distance: 32
+
+default-locale: en_US
+log-player-ip-addresses: true
+saved-user-logins: []
+pending-authentication-timeout: 120
+notify-on-new-bedrock-update: true
+
+advanced:
+  cache-images: 0
+  scoreboard-packet-threshold: 20
+  add-team-suggestions: true
+  resource-pack-urls: []
+  floodgate-key-file: key.pem
+  java:
+    use-haproxy-protocol: false
+    use-direct-connection: true
+    disable-compression: true
+  bedrock:
+    broadcast-port: 0
+    compression-level: 6
+    use-haproxy-protocol: false
+    haproxy-protocol-whitelisted-ips: []
+    use-waterdogpe-forwarding: false
+    mtu: 1400
+    validate-bedrock-login: true
+
+debug-mode: false
+config-version: 7

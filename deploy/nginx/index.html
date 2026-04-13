@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>minecraft.yourssu.com</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f4f1e8;
+      --panel: rgba(255, 252, 245, 0.86);
+      --ink: #1d241b;
+      --accent: #3b7f4a;
+      --accent-2: #8b5a2b;
+      --line: rgba(29, 36, 27, 0.14);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Noto Serif KR", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top, rgba(59, 127, 74, 0.18), transparent 38%),
+        linear-gradient(180deg, #f5efe2 0%, #e5dcc7 100%);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    main {
+      width: min(720px, 100%);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 32px;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 24px 80px rgba(49, 41, 27, 0.12);
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+    p {
+      margin: 0 0 16px;
+      line-height: 1.7;
+      font-size: 1rem;
+    }
+    .card {
+      margin-top: 24px;
+      padding: 18px 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.7);
+      border: 1px solid var(--line);
+    }
+    code {
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 0.95rem;
+      color: var(--accent-2);
+      word-break: break-word;
+    }
+    ul {
+      margin: 16px 0 0;
+      padding-left: 18px;
+      line-height: 1.8;
+    }
+    strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main>
+    <p><strong>Minecraft Java Server</strong></p>
+    <h1>minecraft.yourssu.com</h1>
+    <p>웹 SSL은 이 안내 페이지용입니다. 실제 마인크래프트 접속은 Java 클라이언트에서 아래 주소로 진행합니다.</p>
+    <div class="card">
+      <p>서버 주소</p>
+      <p><code>minecraft.yourssu.com</code></p>
+      <p>게임 버전</p>
+      <p><code>1.21.11</code></p>
+      <p>포트</p>
+      <p><code>25565/tcp</code></p>
+    </div>
+    <ul>
+      <li>DNS A 레코드는 공인 IP를 가리켜야 합니다.</li>
+      <li>공유기에서는 <code>25565/tcp</code>를 이 서버로 포워딩해야 합니다.</li>
+      <li>Let&apos;s Encrypt HTTP 검증을 쓸 경우 <code>80/tcp</code>와 <code>443/tcp</code>도 열어야 합니다.</li>
+    </ul>
+  </main>
+</body>
+</html>

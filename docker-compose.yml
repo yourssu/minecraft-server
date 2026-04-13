@@ -1,0 +1,135 @@
+services:
+  paper:
+    image: itzg/minecraft-server:java21
+    container_name: minecraft-paper
+    init: true
+    stdin_open: true
+    tty: true
+    user: "${PUID:-1000}:${PGID:-1000}"
+    restart: unless-stopped
+    stop_grace_period: 2m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    ports:
+      - "${MC_PORT:-25565}:25565/tcp"
+      - "${BEDROCK_PORT:-19132}:19132/udp"
+      - "127.0.0.1:8100:8100"
+    environment:
+      EULA: "TRUE"
+      TZ: "${TZ:-Asia/Seoul}"
+      VERSION: "1.21.11"
+      TYPE: "PAPER"
+      MEMORY: "${MC_MEMORY:-6G}"
+      MOTD: "${MOTD:-Paper 1.21.11 on Java 21}"
+      LEVEL: "${MC_LEVEL:-world}"
+      MODE: "${MC_MODE:-survival}"
+      DIFFICULTY: "${MC_DIFFICULTY:-normal}"
+      MAX_PLAYERS: "${MAX_PLAYERS:-10}"
+      VIEW_DISTANCE: "${VIEW_DISTANCE:-10}"
+      SIMULATION_DISTANCE: "${SIMULATION_DISTANCE:-10}"
+      ONLINE_MODE: "${ONLINE_MODE:-TRUE}"
+      ENABLE_WHITELIST: "${ENABLE_WHITELIST:-TRUE}"
+      ENFORCE_WHITELIST: "${ENFORCE_WHITELIST:-TRUE}"
+      WHITELIST: "${WHITELIST:-}"
+      OPS: "${OPS:-}"
+      ENABLE_RCON: "TRUE"
+      RCON_PASSWORD: "${RCON_PASSWORD:-change-this-now}"
+      ENABLE_QUERY: "${ENABLE_QUERY:-FALSE}"
+      PVP: "${PVP:-TRUE}"
+      ALLOW_FLIGHT: "${ALLOW_FLIGHT:-FALSE}"
+      ENABLE_COMMAND_BLOCK: "${ENABLE_COMMAND_BLOCK:-FALSE}"
+      SNOOPER_ENABLED: "FALSE"
+      USE_AIKAR_FLAGS: "${USE_AIKAR_FLAGS:-TRUE}"
+      MODRINTH_PROJECTS: "@/extras/paper-modrinth-plugins.txt"
+      PLUGINS: |
+        https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
+        https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest/downloads/spigot
+      MODRINTH_DOWNLOAD_DEPENDENCIES: "${MODRINTH_DOWNLOAD_DEPENDENCIES:-required}"
+      COPY_CONFIG_DEST: "/data"
+      SYNC_SKIP_NEWER_IN_DESTINATION: "false"
+      SPIGET_RESOURCES: "${SPIGET_RESOURCES:-34315}"
+      ENABLE_AUTOPAUSE: "${ENABLE_AUTOPAUSE:-FALSE}"
+      AUTOPAUSE_TIMEOUT_EST: "${AUTOPAUSE_TIMEOUT_EST:-3600}"
+      EXISTING_OPS_FILE: "MERGE"
+      EXISTING_WHITELIST_FILE: "MERGE"
+    volumes:
+      - ./data:/data
+      - ./paper-plugins:/plugins
+      - ./config:/config:ro
+      - ./extras:/extras:ro
+    networks:
+      - default
+      - mc-proxy
+    healthcheck:
+      test: ["CMD", "mc-health"]
+      start_period: 1m
+      interval: 15s
+      timeout: 5s
+      retries: 20
+
+  mcsmanager-web:
+    image: githubyumao/mcsmanager-web:latest
+    container_name: mcsmanager-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:23333:23333"
+    volumes:
+      - ./mcsmanager-data/web:/opt/mcsmanager/web/data
+    environment:
+      TZ: "${TZ:-Asia/Seoul}"
+    networks:
+      - default
+      - mc-proxy
+    depends_on:
+      - mcsmanager-daemon
+
+  mcsmanager-daemon:
+    image: githubyumao/mcsmanager-daemon:latest
+    container_name: mcsmanager-daemon
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:24444:24444"
+    volumes:
+      - ./mcsmanager-data/daemon:/opt/mcsmanager/daemon/data
+    environment:
+      TZ: "${TZ:-Asia/Seoul}"
+
+  backups:
+    image: itzg/mc-backup:latest
+    container_name: minecraft-backups
+    init: true
+    user: "${PUID:-1000}:${PGID:-1000}"
+    restart: unless-stopped
+    depends_on:
+      paper:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    environment:
+      TZ: "${TZ:-Asia/Seoul}"
+      BACKUP_NAME: "${BACKUP_NAME:-world}"
+      BACKUP_METHOD: "${BACKUP_METHOD:-tar}"
+      BACKUP_INTERVAL: "${BACKUP_INTERVAL:-12h}"
+      INITIAL_DELAY: "0"
+      PRUNE_BACKUPS_DAYS: "${PRUNE_BACKUPS_DAYS:-7}"
+      PAUSE_IF_NO_PLAYERS: "${PAUSE_IF_NO_PLAYERS:-FALSE}"
+      RCON_HOST: paper
+      RCON_PORT: 25575
+      RCON_PASSWORD: "${RCON_PASSWORD:-change-this-now}"
+      LINK_LATEST: "TRUE"
+      TAR_COMPRESS_METHOD: "zstd"
+    volumes:
+      - ./data:/data:ro
+      - ./backups:/backups
+
+networks:
+  mc-proxy:
+    external: true

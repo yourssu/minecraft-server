@@ -1,0 +1,17 @@
+.codex
+.env
+
+data/*
+!data/.gitkeep
+
+backups/*
+!backups/.gitkeep
+
+paper-plugins/*
+!paper-plugins/.gitkeep
+!paper-plugins/README.md
+
+proxy-data/
+proxy-plugins/
+
+mcsmanager-data/

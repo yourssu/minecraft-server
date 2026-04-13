@@ -1,0 +1,20 @@
+# Paper 1.21.11 Java-only plugin bundle
+paper:luckperms
+paper:worldedit
+paper:worldguard
+paper:chunky
+paper:placeholderapi
+# Pinned by Modrinth version ID — compatibility metadata lags behind 1.21.11.
+paper:grimac:5K81jsel
+paper:coreprotect:HD2IvrxS
+paper:essentialsx:Oa9ZDzZq
+paper:essentialsx-spawn:RVbLg2Am
+paper:essentialsx-chat-module:BdLUtz0O
+paper:discordsrv
+paper:tab-was-taken
+paper:multiverse-core
+paper:multiverse-portals
+paper:bluemap
+
+# Useful, but left disabled by default until needed.
+# paper:essentialsx
