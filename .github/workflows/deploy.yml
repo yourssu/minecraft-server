@@ -14,49 +14,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write .env from GitHub vars
-        run: |
-          cat > .env << 'EOF'
-          TZ=${{ vars.TZ }}
-          PUID=${{ vars.PUID }}
-          PGID=${{ vars.PGID }}
-          MC_MEMORY=${{ vars.MC_MEMORY }}
-          MC_PORT=${{ vars.MC_PORT }}
-          BEDROCK_PORT=${{ vars.BEDROCK_PORT }}
-          MC_LEVEL=${{ vars.MC_LEVEL }}
-          MC_MODE=${{ vars.MC_MODE }}
-          MC_DIFFICULTY=${{ vars.MC_DIFFICULTY }}
-          MAX_PLAYERS=${{ vars.MAX_PLAYERS }}
-          VIEW_DISTANCE=${{ vars.VIEW_DISTANCE }}
-          SIMULATION_DISTANCE=${{ vars.SIMULATION_DISTANCE }}
-          ONLINE_MODE=${{ vars.ONLINE_MODE }}
-          ENABLE_WHITELIST=${{ vars.ENABLE_WHITELIST }}
-          ENFORCE_WHITELIST=${{ vars.ENFORCE_WHITELIST }}
-          WHITELIST=${{ vars.WHITELIST }}
-          OPS=${{ vars.OPS }}
-          MOTD=${{ vars.MOTD }}
-          PVP=${{ vars.PVP }}
-          ALLOW_FLIGHT=${{ vars.ALLOW_FLIGHT }}
-          ENABLE_COMMAND_BLOCK=${{ vars.ENABLE_COMMAND_BLOCK }}
-          ENABLE_QUERY=${{ vars.ENABLE_QUERY }}
-          RCON_PASSWORD=${{ vars.RCON_PASSWORD }}
-          USE_AIKAR_FLAGS=${{ vars.USE_AIKAR_FLAGS }}
-          MODRINTH_DOWNLOAD_DEPENDENCIES=${{ vars.MODRINTH_DOWNLOAD_DEPENDENCIES }}
-          SPIGET_RESOURCES=${{ vars.SPIGET_RESOURCES }}
-          ENABLE_AUTOPAUSE=${{ vars.ENABLE_AUTOPAUSE }}
-          AUTOPAUSE_TIMEOUT_EST=${{ vars.AUTOPAUSE_TIMEOUT_EST }}
-          BACKUP_NAME=${{ vars.BACKUP_NAME }}
-          BACKUP_METHOD=${{ vars.BACKUP_METHOD }}
-          BACKUP_INTERVAL=${{ vars.BACKUP_INTERVAL }}
-          PRUNE_BACKUPS_DAYS=${{ vars.PRUNE_BACKUPS_DAYS }}
-          PAUSE_IF_NO_PLAYERS=${{ vars.PAUSE_IF_NO_PLAYERS }}
-          EOF
+      - name: Connect Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_CLIENT_SECRET }}
+          tags: tag:ci
 
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USER }}
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
@@ -65,7 +34,6 @@ jobs:
 
             git pull origin main
 
-            # .env 덮어쓰기 (runner에서 생성한 파일을 SCP 대신 heredoc으로 주입)
             cat > .env << 'ENVEOF'
             TZ=${{ vars.TZ }}
             PUID=${{ vars.PUID }}

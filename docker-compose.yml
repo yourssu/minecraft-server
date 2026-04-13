@@ -93,12 +93,13 @@ services:
     image: githubyumao/mcsmanager-daemon:latest
     container_name: mcsmanager-daemon
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:24444:24444"
     volumes:
       - ./mcsmanager-data/daemon:/opt/mcsmanager/daemon/data
     environment:
       TZ: "${TZ:-Asia/Seoul}"
+    networks:
+      - default
+      - mc-proxy
 
   backups:
     image: itzg/mc-backup:latest
