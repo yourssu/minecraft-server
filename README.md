@@ -4,10 +4,10 @@ yourssu 동아리 전용 Minecraft 서버. Paper 1.21.11 기반으로 Java · Be
 
 ## 접속 주소
 
-| 클라이언트 | 주소 | 포트 |
-|-----------|------|------|
-| Java Edition | `minecraft.yourssu.com` | `25565` |
-| Bedrock Edition | `minecraft.yourssu.com` | `19132` |
+| 클라이언트 | 버전 | 주소 | 포트 |
+|-----------|------|------|------|
+| Java Edition | **1.21.11** | `minecraft.yourssu.com` | `25565` |
+| Bedrock Edition | **1.21.90+** | `minecraft.yourssu.com` | `19132` |
 | 지도 (BlueMap) | `https://minecraft.yourssu.com/` | — |
 | 관리 패널 | `https://minecraft.yourssu.com/admin/` | — |
 
