@@ -2,6 +2,8 @@ services:
   paper:
     image: itzg/minecraft-server:java21
     container_name: minecraft-paper
+    labels:
+      mcsmanager.instance.uuid: "b8f87fdb491e44cb82804de762d8800a"
     init: true
     stdin_open: true
     tty: true
