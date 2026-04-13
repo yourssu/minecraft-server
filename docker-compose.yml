@@ -95,6 +95,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./mcsmanager-data/daemon:/opt/mcsmanager/daemon/data
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       TZ: "${TZ:-Asia/Seoul}"
     networks:
