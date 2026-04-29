@@ -1,9 +1,9 @@
 name: Deploy to Production
 
 on:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
   workflow_dispatch:
 
 jobs:
@@ -59,6 +59,8 @@ jobs:
             ENABLE_QUERY=${{ vars.ENABLE_QUERY }}
             RCON_PASSWORD=${{ vars.RCON_PASSWORD }}
             USE_AIKAR_FLAGS=${{ vars.USE_AIKAR_FLAGS }}
+            LETSENCRYPT_DOMAIN=${{ vars.LETSENCRYPT_DOMAIN }}
+            LETSENCRYPT_EMAIL=${{ vars.LETSENCRYPT_EMAIL }}
             MODRINTH_DOWNLOAD_DEPENDENCIES=${{ vars.MODRINTH_DOWNLOAD_DEPENDENCIES }}
             SPIGET_RESOURCES=${{ vars.SPIGET_RESOURCES }}
             ENABLE_AUTOPAUSE=${{ vars.ENABLE_AUTOPAUSE }}

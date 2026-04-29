@@ -41,6 +41,15 @@ minecraft.yourssu.com
 - **설명**: 서버 콘솔, 인스턴스 관리, 파일 브라우저
 - **인증**: 패널 계정 로그인 필요
 
+MCSManager는 `/admin` 하위 경로에서 동작하도록 패널 설정을 맞춰야 한다.
+`mcsmanager-data/web/SystemConfig/config.json`:
+```json
+{
+  "prefix": "/admin",
+  "reverseProxyMode": true
+}
+```
+
 ---
 
 ## 내부 포트 (서버 로컬 전용)
@@ -72,6 +81,35 @@ sudo ufw deny 25575/tcp    # RCON
 sudo ufw deny 8100/tcp     # BlueMap (nginx 경유)
 sudo ufw deny 23333/tcp    # MCSManager Web (nginx 경유)
 ```
+
+---
+
+## HTTPS / Certbot 초기 발급
+
+Nginx는 인증서가 없는 상태에서 SSL 설정을 로드하면 시작하지 못한다.
+초기 배포는 HTTP 부트스트랩 설정으로 시작한 뒤 인증서를 발급하고, 그 다음 HTTPS 설정으로 전환한다.
+
+1. 부트스트랩 설정으로 Nginx 기동:
+   ```bash
+   cp deploy/nginx/minecraft.yourssu.com.bootstrap.conf deploy/nginx/minecraft.yourssu.com.conf
+   sudo docker compose up -d nginx
+   ```
+
+2. 최초 인증서 발급:
+   ```bash
+   sudo docker compose --profile certbot run --rm certbot-init
+   ```
+
+3. HTTPS 설정 활성화:
+   ```bash
+   cp deploy/nginx/minecraft.yourssu.com.ssl.conf deploy/nginx/minecraft.yourssu.com.conf
+   sudo docker compose up -d nginx certbot
+   ```
+
+4. 이후 갱신은 `certbot` 서비스가 12시간마다 `certbot renew`를 실행한다.
+
+`LETSENCRYPT_DOMAIN` 기본값은 `minecraft.yourssu.com`이다.
+`LETSENCRYPT_EMAIL`을 비워두면 이메일 없이 등록한다.
 
 ---
 
