@@ -50,6 +50,8 @@
 | Multiverse-Core | 멀티월드 |
 | Multiverse-Portals | 멀티월드 포탈 |
 | BlueMap | 3D 웹 지도 |
+| worldguard-extraflags-plus | 지역별 난이도 설정 |
+| ViaVersion | 상위 버전 접속 허용 |
 
 ### SpigotMC (SPIGET_RESOURCES)
 

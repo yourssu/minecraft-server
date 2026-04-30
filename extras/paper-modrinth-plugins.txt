@@ -16,6 +16,7 @@ paper:multiverse-core
 paper:multiverse-portals
 paper:bluemap
 paper:worldguard-extraflags-plus
+paper:viaversion
 
 # Useful, but left disabled by default until needed.
 # paper:essentialsx
