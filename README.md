@@ -25,6 +25,7 @@ docker compose up -d
 
 - [엔드포인트](docs/endpoints.md) — 접속 주소, 포트, 방화벽 설정
 - [설정 가이드](docs/configuration.md) — 환경 변수, 플러그인 목록, Anti-Xray, 닉네임/팀 시스템
+- [코어전 운영 가이드](docs/coregame-guide.md) — 메인 게임 명령어, 경기 준비, 테스트 절차
 
 ## 스택
 

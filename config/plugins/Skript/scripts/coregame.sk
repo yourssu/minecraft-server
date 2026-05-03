@@ -1,7 +1,7 @@
 options:
     mg-prefix: &c코어전 &8> &r
     mg-world: world
-    mg-core-hp: 500
+    mg-core-hp: 200
     mg-build-seconds: 600
     mg-border-radius: 320
     mg-core-protect-radius: 4
@@ -290,7 +290,6 @@ function mgStartGame():
     set {mg::phase} to "build"
     set {mg::combat-unlock-at} to now
     add {@mg-build-seconds} seconds to {mg::combat-unlock-at}
-    execute console command "gamerule keepInventory true"
     mgEnableWorldBorder()
     loop all players:
         set {_team} to mgPlayerTeam(loop-player)
@@ -309,7 +308,6 @@ function mgStartGame():
 function mgStopGame():
     set {mg::running} to false
     set {mg::phase} to "stopped"
-    execute console command "gamerule keepInventory false"
     mgDisableWorldBorder()
     broadcast "{@mg-prefix}&e경기가 중단되었습니다."
     mgTitle("&e경기 중단", "&f운영자가 경기를 중단했습니다")
@@ -317,7 +315,6 @@ function mgStopGame():
 function mgEndGame(winner: text):
     set {mg::running} to false
     set {mg::phase} to "ended"
-    execute console command "gamerule keepInventory false"
     mgDisableWorldBorder()
     if {_winner} is not "":
         broadcast "{@mg-prefix}&b%mgTeamKorean({_winner})%팀&f이 승리했습니다!"
