@@ -10,7 +10,7 @@ options:
     cg-core-protect-radius: 4
 
 function cgTeamList() :: objects:
-    set {_teams::*} to "Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Purple"
+    set {_teams::*} to "Red", "Orange", "Yellow", "Green", "Blue", "Indigo" and "Purple"
     return {_teams::*}
 
 function cgDefaultTarget(team: text) :: text:
@@ -186,16 +186,21 @@ function cgEliminateTeam(deadTeam: text, killerTeam: text):
 
     if {_killerTeam} is set:
         set {_newTarget} to {_deadTarget}
-        if {_newTarget} is not set or {_newTarget} is "":
+        if {_newTarget} is not set:
+            set {_newTarget} to cgFindNextAlive({_deadTeam}, 7)
+        else if {_newTarget} is "":
             set {_newTarget} to cgFindNextAlive({_deadTeam}, 7)
         if {_newTarget} is {_deadTeam}:
             set {_newTarget} to cgFindNextAlive({_newTarget}, 7)
         if {_newTarget} is set:
             if {alive::%{_newTarget}%} is not true:
                 set {_newTarget} to cgFindNextAlive({_newTarget}, 7)
-        if {_newTarget} is set and {_newTarget} is not "":
-            set {target::%{_killerTeam}%} to {_newTarget}
-            broadcast "{@cg-prefix}&6%{_killerTeam}% &fteam eliminated &c%{_deadTeam}%&f. New target: &e%{_newTarget}%&f."
+        if {_newTarget} is set:
+            if {_newTarget} is not "":
+                set {target::%{_killerTeam}%} to {_newTarget}
+                broadcast "{@cg-prefix}&6%{_killerTeam}% &fteam eliminated &c%{_deadTeam}%&f. New target: &e%{_newTarget}%&f."
+            else:
+                broadcast "{@cg-prefix}&6%{_killerTeam}% &fteam eliminated &c%{_deadTeam}%&f."
         else:
             broadcast "{@cg-prefix}&6%{_killerTeam}% &fteam eliminated &c%{_deadTeam}%&f."
 
@@ -236,7 +241,7 @@ command /coregame <text>:
             send "{@cg-prefix}&fPhase: &e%{coregame::phase}%" to player
             send "{@cg-prefix}&fCombat unlock at: &e%{coregame::combat-unlock-at}%" to player
             loop cgTeamList():
-                send "{@cg-prefix}&7%loop-value%&f | Alive: &e%{alive::%loop-value%%}%&f | HP: &e%{corehp::%loop-value%%}%&f | Target: &e%{target::%loop-value%%}%" to player
+                send "{@cg-prefix}&7%loop-value%&f | Alive: &e%{alive::%loop-value%}%&f | HP: &e%{corehp::%loop-value%}%&f | Target: &e%{target::%loop-value%}%" to player
             stop
         send "{@cg-prefix}&7Usage: /coregame <start|stop|status>" to player
 
@@ -267,12 +272,14 @@ command /setcore <text>:
         set {coreloc::%{_team}%} to location of {_b}
         send "{@cg-prefix}&aCore for &e%{_team}% &aset to &f%x-coordinate of location of {_b}%, %y-coordinate of location of {_b}%, %z-coordinate of location of {_b}%&a."
 
-on left click on block:
+on left click:
+    if clicked block is not set:
+        stop
     if {coregame::running} is not true:
         stop
     if {coregame::phase} is not "combat":
         stop
-    set {_clickedBlock} to event-block
+    set {_clickedBlock} to clicked block
     set {_coreTeam} to cgTeamByCore(location of {_clickedBlock})
     if {_coreTeam} is "":
         stop
@@ -280,7 +287,10 @@ on left click on block:
     cancel event
 
     set {_attackerTeam} to cgPlayerTeam(player)
-    if {_attackerTeam} is not set or {_attackerTeam} is "":
+    if {_attackerTeam} is not set:
+        send "{@cg-prefix}&cYou are not assigned to a team." to player
+        stop
+    if {_attackerTeam} is "":
         send "{@cg-prefix}&cYou are not assigned to a team." to player
         stop
     if {alive::%{_attackerTeam}%} is not true:
@@ -288,7 +298,10 @@ on left click on block:
         stop
 
     set {_targetTeam} to {target::%{_attackerTeam}%}
-    if {_targetTeam} is not set or {_targetTeam} is "":
+    if {_targetTeam} is not set:
+        send "{@cg-prefix}&cYour target is not set." to player
+        stop
+    if {_targetTeam} is "":
         send "{@cg-prefix}&cYour target is not set." to player
         stop
 
