@@ -1,0 +1,13 @@
+groups:
+  survival:
+    worlds:
+    - world
+    - world_nether
+    - world_the_end
+    shares:
+    - inventory
+    - experience
+    - health
+    - hunger
+    - gamemode
+    - last_location
