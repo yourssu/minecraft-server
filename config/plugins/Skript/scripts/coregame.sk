@@ -6,6 +6,8 @@ options:
     cg-end-teleport-y: 80
     cg-end-teleport-z: 0
     cg-build-phase-seconds: 600
+    cg-border-center-x: -1905
+    cg-border-center-z: 285
     cg-border-radius: 320
     cg-core-protect-radius: 4
 
@@ -51,8 +53,8 @@ function cgTeamByCore(loc: location) :: text:
     return ""
 
 function cgIsInsideBorder(loc: location) :: boolean:
-    set {_x} to x-coordinate of {_loc}
-    set {_z} to z-coordinate of {_loc}
+    set {_x} to (x-coordinate of {_loc}) - {@cg-border-center-x}
+    set {_z} to (z-coordinate of {_loc}) - {@cg-border-center-z}
     if ({_x} * {_x}) + ({_z} * {_z}) <= ({@cg-border-radius} * {@cg-border-radius}):
         return true
     return false
