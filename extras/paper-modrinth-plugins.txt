@@ -18,6 +18,7 @@ paper:discordsrv
 paper:tab-was-taken
 paper:multiverse-core
 paper:multiverse-portals
+paper:multiverse-inventories
 paper:bluemap
 paper:worldguard-extraflags-plus
 paper:viaversion

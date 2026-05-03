@@ -1,0 +1,567 @@
+options:
+    mg-prefix: &c코어전 &8> &r
+    mg-world: world
+    mg-core-hp: 500
+    mg-build-seconds: 600
+    mg-border-radius: 320
+    mg-core-protect-radius: 4
+    mg-end-x: 0
+    mg-end-y: 120
+    mg-end-z: 0
+
+function mgTeams() :: objects:
+    add "Red" to {_teams::*}
+    add "Orange" to {_teams::*}
+    add "Yellow" to {_teams::*}
+    add "Green" to {_teams::*}
+    add "Blue" to {_teams::*}
+    add "Indigo" to {_teams::*}
+    add "Purple" to {_teams::*}
+    return {_teams::*}
+
+function mgNormalizeTeam(team: text) :: text:
+    set {_key} to lowercase {_team}
+    if {_key} is "red":
+        return "Red"
+    if {_key} is "orange":
+        return "Orange"
+    if {_key} is "yellow":
+        return "Yellow"
+    if {_key} is "green":
+        return "Green"
+    if {_key} is "blue":
+        return "Blue"
+    if {_key} is "indigo":
+        return "Indigo"
+    if {_key} is "purple":
+        return "Purple"
+    return ""
+
+function mgTeamKorean(team: text) :: text:
+    if {_team} is "Red":
+        return "레드"
+    if {_team} is "Orange":
+        return "오렌지"
+    if {_team} is "Yellow":
+        return "옐로우"
+    if {_team} is "Green":
+        return "그린"
+    if {_team} is "Blue":
+        return "블루"
+    if {_team} is "Indigo":
+        return "인디고"
+    if {_team} is "Purple":
+        return "퍼플"
+    return "미정"
+
+function mgColorName(team: text) :: text:
+    if {_team} is "Red":
+        return "red"
+    if {_team} is "Orange":
+        return "gold"
+    if {_team} is "Yellow":
+        return "yellow"
+    if {_team} is "Green":
+        return "green"
+    if {_team} is "Blue":
+        return "blue"
+    if {_team} is "Indigo":
+        return "dark_blue"
+    if {_team} is "Purple":
+        return "dark_purple"
+    return "white"
+
+function mgNicknameSlot(team: text) :: number:
+    if {_team} is "Red":
+        return 1
+    if {_team} is "Orange":
+        return 7
+    if {_team} is "Yellow":
+        return 4
+    if {_team} is "Green":
+        return 3
+    if {_team} is "Blue":
+        return 2
+    if {_team} is "Indigo":
+        return 9
+    if {_team} is "Purple":
+        return 12
+    return 0
+
+function mgDefaultTarget(team: text) :: text:
+    if {_team} is "Red":
+        return "Orange"
+    if {_team} is "Orange":
+        return "Yellow"
+    if {_team} is "Yellow":
+        return "Green"
+    if {_team} is "Green":
+        return "Blue"
+    if {_team} is "Blue":
+        return "Indigo"
+    if {_team} is "Indigo":
+        return "Purple"
+    if {_team} is "Purple":
+        return "Red"
+    return ""
+
+function mgPlayerName(p: player) :: text:
+    if {nickname::%uuid of {_p}%} is set:
+        return {nickname::%uuid of {_p}%}
+    return name of {_p}
+
+function mgPlayerTeam(p: player) :: text:
+    if {mg::player-team::%uuid of {_p}%} is set:
+        return {mg::player-team::%uuid of {_p}%}
+    return ""
+
+function mgTitle(title: text, subtitle: text):
+    loop all players:
+        send title "%{_title}%" with subtitle "%{_subtitle}%" to loop-player for 5 seconds
+
+function mgEnableWorldBorder():
+    set {_centerX} to 0
+    set {_centerZ} to 0
+    if {mg::battle-center} is set:
+        set {_centerX} to x-coordinate of {mg::battle-center}
+        set {_centerZ} to z-coordinate of {mg::battle-center}
+    execute console command "worldborder center %{_centerX}% %{_centerZ}%"
+    execute console command "worldborder set 640"
+
+function mgDisableWorldBorder():
+    execute console command "worldborder center 0 0"
+    execute console command "worldborder set 59999968"
+
+function mgCoreLocation(team: text) :: location:
+    return {mg::core::%{_team}%}
+
+function mgTeamSpawn(team: text) :: location:
+    if {mg::spawn::%{_team}%} is set:
+        return {mg::spawn::%{_team}%}
+    if {mg::core::%{_team}%} is set:
+        set {_loc} to {mg::core::%{_team}%}
+        add 1 to y-coordinate of {_loc}
+        return {_loc}
+    if {mg::battle-center} is set:
+        return {mg::battle-center}
+    set {_w} to world("{@mg-world}")
+    return location(0, 80, 0, {_w})
+
+function mgCoreTeam(loc: location) :: text:
+    loop mgTeams():
+        set {_core} to mgCoreLocation(loop-value)
+        if {_core} is set:
+            if world of {_core} is world of {_loc}:
+                if x-coordinate of {_core} is x-coordinate of {_loc}:
+                    if y-coordinate of {_core} is y-coordinate of {_loc}:
+                        if z-coordinate of {_core} is z-coordinate of {_loc}:
+                            return loop-value
+    return ""
+
+function mgInsideBorder(loc: location) :: boolean:
+    set {_x} to x-coordinate of {_loc}
+    set {_z} to z-coordinate of {_loc}
+    set {_centerX} to 0
+    set {_centerZ} to 0
+    if {mg::battle-center} is set:
+        set {_centerX} to x-coordinate of {mg::battle-center}
+        set {_centerZ} to z-coordinate of {mg::battle-center}
+    subtract {_centerX} from {_x}
+    subtract {_centerZ} from {_z}
+    if ({_x} * {_x}) + ({_z} * {_z}) <= ({@mg-border-radius} * {@mg-border-radius}):
+        return true
+    return false
+
+function mgInCoreProtectedArea(loc: location) :: boolean:
+    loop mgTeams():
+        set {_core} to mgCoreLocation(loop-value)
+        if {_core} is set:
+            if world of {_core} is world of {_loc}:
+                if distance between {_core} and {_loc} <= {@mg-core-protect-radius}:
+                    return true
+    return false
+
+function mgNextAliveAfter(team: text) :: text:
+    set {_cursor} to {_team}
+    loop 7 times:
+        set {_cursor} to mgDefaultTarget({_cursor})
+        if {_cursor} is "":
+            return ""
+        if {mg::alive::%{_cursor}%} is true:
+            return {_cursor}
+    return ""
+
+function mgAliveCount() :: number:
+    set {_count} to 0
+    loop mgTeams():
+        if {mg::alive::%loop-value%} is true:
+            add 1 to {_count}
+    return {_count}
+
+function mgEnsureScoreboardTeams():
+    loop mgTeams():
+        execute console command "team add mg_%loop-value%"
+        execute console command "team modify mg_%loop-value% color %mgColorName(loop-value)%"
+        execute console command "team modify mg_%loop-value% friendlyFire false"
+
+function mgEnsureLuckPermsGroups():
+    execute console command "lp creategroup mg_red"
+    execute console command "lp creategroup mg_orange"
+    execute console command "lp creategroup mg_yellow"
+    execute console command "lp creategroup mg_green"
+    execute console command "lp creategroup mg_blue"
+    execute console command "lp creategroup mg_indigo"
+    execute console command "lp creategroup mg_purple"
+
+function mgLuckPermsGroup(team: text) :: text:
+    if {_team} is "Red":
+        return "mg_red"
+    if {_team} is "Orange":
+        return "mg_orange"
+    if {_team} is "Yellow":
+        return "mg_yellow"
+    if {_team} is "Green":
+        return "mg_green"
+    if {_team} is "Blue":
+        return "mg_blue"
+    if {_team} is "Indigo":
+        return "mg_indigo"
+    if {_team} is "Purple":
+        return "mg_purple"
+    return ""
+
+function mgApplyTeamVisuals(p: player, team: text):
+    execute console command "team join mg_%{_team}% %name of {_p}%"
+    set {_slot} to mgNicknameSlot({_team})
+    if {_slot} > 0:
+        set {team::%uuid of {_p}%} to {_slot}
+        applyNickname({_p})
+
+function mgAssignTeam(op: offlineplayer, team: text):
+    set {mg::player-team::%uuid of {_op}%} to {_team}
+    set {_newGroup} to mgLuckPermsGroup({_team})
+    if {_newGroup} is not "":
+        loop mgTeams():
+            set {_oldGroup} to mgLuckPermsGroup(loop-value)
+            if {_oldGroup} is not "":
+                execute console command "lp user %name of {_op}% parent remove %{_oldGroup}%"
+        execute console command "lp user %name of {_op}% parent add %{_newGroup}%"
+    if {_op} is online:
+        loop all players:
+            if uuid of loop-player is uuid of {_op}:
+                mgApplyTeamVisuals(loop-player, {_team})
+                send "{@mg-prefix}&a당신은 &e%mgTeamKorean({_team})%팀&a으로 배정되었습니다." to loop-player
+
+function mgSetDefaultCores():
+    set {_w} to world("{@mg-world}")
+    if {_w} is not set:
+        broadcast "{@mg-prefix}&c월드 {@mg-world}를 찾을 수 없어 코어 좌표를 설정하지 못했습니다."
+        stop
+    if {mg::core::Red} is not set:
+        set {mg::core::Red} to location(100, 65, 200, {_w})
+    if {mg::core::Orange} is not set:
+        set {mg::core::Orange} to location(220, 65, 120, {_w})
+    if {mg::core::Yellow} is not set:
+        set {mg::core::Yellow} to location(220, 65, -40, {_w})
+    if {mg::core::Green} is not set:
+        set {mg::core::Green} to location(100, 65, -120, {_w})
+    if {mg::core::Blue} is not set:
+        set {mg::core::Blue} to location(-20, 65, -120, {_w})
+    if {mg::core::Indigo} is not set:
+        set {mg::core::Indigo} to location(-140, 65, -40, {_w})
+    if {mg::core::Purple} is not set:
+        set {mg::core::Purple} to location(-140, 65, 120, {_w})
+
+function mgResetGame():
+    set {mg::running} to false
+    set {mg::phase} to "stopped"
+    loop mgTeams():
+        set {mg::hp::%loop-value%} to {@mg-core-hp}
+        set {mg::target::%loop-value%} to mgDefaultTarget(loop-value)
+        set {mg::alive::%loop-value%} to true
+    set {mg::combat-unlock-at} to now
+
+function mgStartGame():
+    mgEnsureScoreboardTeams()
+    mgEnsureLuckPermsGroups()
+    mgSetDefaultCores()
+    mgResetGame()
+    set {mg::running} to true
+    set {mg::phase} to "build"
+    set {mg::combat-unlock-at} to now
+    add {@mg-build-seconds} seconds to {mg::combat-unlock-at}
+    execute console command "gamerule keepInventory true"
+    mgEnableWorldBorder()
+    loop all players:
+        set {_team} to mgPlayerTeam(loop-player)
+        if {_team} is not "":
+            mgApplyTeamVisuals(loop-player, {_team})
+    broadcast "{@mg-prefix}&a경기가 시작되었습니다. 10분 동안 빌드 페이즈가 진행됩니다."
+    broadcast "{@mg-prefix}&e빌드 페이즈 동안 PvP와 코어 공격은 비활성화됩니다."
+    mgTitle("&a코어전 시작", "&e10분 동안 빌드 페이즈가 진행됩니다")
+    wait {@mg-build-seconds} seconds
+    if {mg::running} is true:
+        if {mg::phase} is "build":
+            set {mg::phase} to "combat"
+            broadcast "{@mg-prefix}&c전투 페이즈가 시작되었습니다. PvP와 코어 공격이 활성화됩니다."
+            mgTitle("&c전투 시작", "&fPvP와 코어 공격이 활성화되었습니다")
+
+function mgStopGame():
+    set {mg::running} to false
+    set {mg::phase} to "stopped"
+    execute console command "gamerule keepInventory false"
+    mgDisableWorldBorder()
+    broadcast "{@mg-prefix}&e경기가 중단되었습니다."
+    mgTitle("&e경기 중단", "&f운영자가 경기를 중단했습니다")
+
+function mgEndGame(winner: text):
+    set {mg::running} to false
+    set {mg::phase} to "ended"
+    execute console command "gamerule keepInventory false"
+    mgDisableWorldBorder()
+    if {_winner} is not "":
+        broadcast "{@mg-prefix}&b%mgTeamKorean({_winner})%팀&f이 승리했습니다!"
+        mgTitle("&b%mgTeamKorean({_winner})%팀 승리", "&f5초 후 종료 지점으로 이동합니다")
+    if {_winner} is "":
+        broadcast "{@mg-prefix}&f승리 팀 없이 경기가 종료되었습니다."
+        mgTitle("&f경기 종료", "&75초 후 종료 지점으로 이동합니다")
+    wait 5 seconds
+    set {_w} to world("{@mg-world}")
+    if {_w} is set:
+        set {_loc} to location({@mg-end-x}, {@mg-end-y}, {@mg-end-z}, {_w})
+        if {mg::end-location} is set:
+            set {_loc} to {mg::end-location}
+        loop all players:
+            teleport loop-player to {_loc}
+        broadcast "{@mg-prefix}&7모든 플레이어를 종료 지점으로 이동했습니다."
+
+function mgEliminateTeam(deadTeam: text, killerTeam: text):
+    if {mg::alive::%{_deadTeam}%} is not true:
+        stop
+    set {_oldTarget} to {mg::target::%{_deadTeam}%}
+    set {mg::alive::%{_deadTeam}%} to false
+    set {mg::hp::%{_deadTeam}%} to 0
+    broadcast "{@mg-prefix}&c%mgTeamKorean({_deadTeam})%팀&f의 코어가 파괴되었습니다."
+    mgTitle("&c%mgTeamKorean({_deadTeam})%팀 탈락", "&f코어가 파괴되었습니다")
+    loop all players:
+        if mgPlayerTeam(loop-player) is {_deadTeam}:
+            set gamemode of loop-player to spectator
+            send "{@mg-prefix}&c소속 팀이 탈락하여 관전 모드로 전환되었습니다." to loop-player
+    if {_killerTeam} is not "":
+        set {_newTarget} to {_oldTarget}
+        if {_newTarget} is not set:
+            set {_newTarget} to ""
+        if {_newTarget} is {_deadTeam}:
+            set {_newTarget} to mgNextAliveAfter({_deadTeam})
+        if {_newTarget} is "":
+            set {_newTarget} to mgNextAliveAfter({_deadTeam})
+        if {_newTarget} is not "":
+            if {mg::alive::%{_newTarget}%} is not true:
+                set {_newTarget} to mgNextAliveAfter({_newTarget})
+        if {_newTarget} is not "":
+            set {mg::target::%{_killerTeam}%} to {_newTarget}
+            broadcast "{@mg-prefix}&6%mgTeamKorean({_killerTeam})%팀&f의 새 타겟은 &e%mgTeamKorean({_newTarget})%팀&f입니다."
+            mgTitle("&6타겟 변경", "&f%mgTeamKorean({_killerTeam})%팀 -> %mgTeamKorean({_newTarget})%팀")
+    set {_alive} to mgAliveCount()
+    if {_alive} <= 1:
+        set {_winner} to ""
+        loop mgTeams():
+            if {mg::alive::%loop-value%} is true:
+                set {_winner} to loop-value
+        mgEndGame({_winner})
+
+command /maingame <text>:
+    permission: op
+    trigger:
+        if arg-1 is "start":
+            mgStartGame()
+            stop
+        if arg-1 is "stop":
+            mgStopGame()
+            stop
+        if arg-1 is "reset":
+            mgSetDefaultCores()
+            mgResetGame()
+            send "{@mg-prefix}&a경기 변수를 초기화했습니다." to player
+            stop
+        if arg-1 is "combat":
+            if {mg::running} is not true:
+                send "{@mg-prefix}&c경기가 진행 중일 때만 전투 페이즈로 전환할 수 있습니다." to player
+                stop
+            set {mg::phase} to "combat"
+            broadcast "{@mg-prefix}&c운영자가 전투 페이즈를 즉시 시작했습니다."
+            mgTitle("&c전투 시작", "&f운영자가 전투 페이즈를 즉시 시작했습니다")
+            stop
+        if arg-1 is "status":
+            send "{@mg-prefix}&f진행 중: &e%{mg::running}%" to player
+            send "{@mg-prefix}&f페이즈: &e%{mg::phase}%" to player
+            send "{@mg-prefix}&f전투 시작 시각: &e%{mg::combat-unlock-at}%" to player
+            loop mgTeams():
+                set {_alive} to {mg::alive::%loop-value%}
+                set {_hp} to {mg::hp::%loop-value%}
+                set {_target} to {mg::target::%loop-value%}
+                send "{@mg-prefix}&7%mgTeamKorean(loop-value)%팀&f | 생존: &e%{_alive}%&f | HP: &c%{_hp}%&f | 타겟: &e%mgTeamKorean({_target})%팀" to player
+            stop
+        send "{@mg-prefix}&7사용법: /maingame <start|stop|status|reset|combat>" to player
+
+command /mghp <text> <number>:
+    permission: op
+    trigger:
+        set {_team} to mgNormalizeTeam(arg-1)
+        if {_team} is "":
+            send "{@mg-prefix}&c팀 이름이 올바르지 않습니다." to player
+            stop
+        set {mg::hp::%{_team}%} to arg-2
+        if {mg::hp::%{_team}%} < 0:
+            set {mg::hp::%{_team}%} to 0
+        send "{@mg-prefix}&a%mgTeamKorean({_team})%팀 코어 HP를 &c%{mg::hp::%{_team}%}%&a로 설정했습니다." to player
+
+command /mgbattleplace:
+    permission: op
+    trigger:
+        set {mg::battle-center} to location of player
+        if {mg::running} is true:
+            mgEnableWorldBorder()
+        send "{@mg-prefix}&a전투장 중심을 현재 위치로 설정했습니다: &f%x-coordinate of {mg::battle-center}%, %y-coordinate of {mg::battle-center}%, %z-coordinate of {mg::battle-center}%&a." to player
+
+command /mgendplace:
+    permission: op
+    trigger:
+        set {mg::end-location} to location of player
+        send "{@mg-prefix}&a종료 후 이동 위치를 현재 위치로 설정했습니다: &f%x-coordinate of {mg::end-location}%, %y-coordinate of {mg::end-location}%, %z-coordinate of {mg::end-location}%&a." to player
+
+command /mgspawn <text>:
+    permission: op
+    trigger:
+        set {_team} to mgNormalizeTeam(arg-1)
+        if {_team} is "":
+            send "{@mg-prefix}&c팀 이름이 올바르지 않습니다." to player
+            stop
+        set {mg::spawn::%{_team}%} to location of player
+        send "{@mg-prefix}&a%mgTeamKorean({_team})%팀 리스폰 위치를 현재 위치로 설정했습니다: &f%x-coordinate of {mg::spawn::%{_team}%}%, %y-coordinate of {mg::spawn::%{_team}%}%, %z-coordinate of {mg::spawn::%{_team}%}%&a." to player
+
+command /mgteam <offlineplayer> <text>:
+    permission: op
+    trigger:
+        set {_team} to mgNormalizeTeam(arg-2)
+        if {_team} is "":
+            send "{@mg-prefix}&c팀 이름이 올바르지 않습니다. Red, Orange, Yellow, Green, Blue, Indigo, Purple 중 하나를 사용하세요." to player
+            stop
+        mgAssignTeam(arg-1, {_team})
+        send "{@mg-prefix}&a%arg-1% 플레이어를 &e%mgTeamKorean({_team})%팀&a으로 배정했습니다." to player
+
+command /mgcore <text>:
+    permission: op
+    trigger:
+        set {_team} to mgNormalizeTeam(arg-1)
+        if {_team} is "":
+            send "{@mg-prefix}&c팀 이름이 올바르지 않습니다." to player
+            stop
+        set {_b} to targeted block
+        if {_b} is not set:
+            send "{@mg-prefix}&c코어로 지정할 블록을 바라본 뒤 다시 실행하세요." to player
+            stop
+        set {mg::core::%{_team}%} to location of {_b}
+        send "{@mg-prefix}&a%mgTeamKorean({_team})%팀 코어를 현재 바라본 블록으로 지정했습니다." to player
+
+on left click:
+    if {mg::running} is not true:
+        stop
+    if event-block is not set:
+        stop
+    set {_coreTeam} to mgCoreTeam(location of event-block)
+    if {_coreTeam} is "":
+        stop
+    cancel event
+    if {mg::phase} is not "combat":
+        send "{@mg-prefix}&e빌드 페이즈에는 코어를 공격할 수 없습니다." to player
+        stop
+    set {_attackerTeam} to mgPlayerTeam(player)
+    if {_attackerTeam} is "":
+        send "{@mg-prefix}&c소속 팀이 없어 코어를 공격할 수 없습니다." to player
+        stop
+    if {mg::alive::%{_attackerTeam}%} is not true:
+        send "{@mg-prefix}&c탈락한 팀은 코어를 공격할 수 없습니다." to player
+        stop
+    set {_targetTeam} to {mg::target::%{_attackerTeam}%}
+    if {_coreTeam} is {_attackerTeam}:
+        send "{@mg-prefix}&c자기 팀 코어는 공격할 수 없습니다." to player
+        stop
+    if {_coreTeam} is not {_targetTeam}:
+        send "{@mg-prefix}&c현재 타겟이 아닙니다. 목표는 &e%mgTeamKorean({_targetTeam})%팀&c입니다." to player
+        stop
+    if tool of player is not diamond sword:
+        send "{@mg-prefix}&c코어는 다이아몬드 검으로만 공격할 수 있습니다." to player
+        stop
+    remove 1 from {mg::hp::%{_coreTeam}%}
+    if {mg::hp::%{_coreTeam}%} < 0:
+        set {mg::hp::%{_coreTeam}%} to 0
+    send "{@mg-prefix}&a명중! &e%mgTeamKorean({_coreTeam})%팀 &f코어 HP: &c%{mg::hp::%{_coreTeam}%}%" to player
+    if {mg::hp::%{_coreTeam}%} <= 0:
+        mgEliminateTeam({_coreTeam}, {_attackerTeam})
+
+on damage:
+    if {mg::running} is not true:
+        stop
+    if victim is a player:
+        if attacker is a player:
+            if {mg::phase} is not "combat":
+                cancel event
+                send "{@mg-prefix}&e빌드 페이즈에는 PvP가 비활성화되어 있습니다." to attacker
+
+on respawn:
+    set {_team} to mgPlayerTeam(player)
+    if {_team} is "":
+        stop
+    set {_spawn} to mgTeamSpawn({_team})
+    if {_spawn} is set:
+        set respawn location to {_spawn}
+
+on break:
+    if world of event-block is not world("{@mg-world}"):
+        stop
+    if {mg::running} is not true:
+        stop
+    if mgCoreTeam(location of event-block) is not "":
+        cancel event
+        send "{@mg-prefix}&c코어 블록은 직접 파괴할 수 없습니다." to player
+        stop
+    if mgInsideBorder(location of event-block) is false:
+        cancel event
+        send "{@mg-prefix}&c결계 밖에서는 블록을 파괴할 수 없습니다." to player
+        stop
+    if mgInCoreProtectedArea(location of event-block) is true:
+        cancel event
+        send "{@mg-prefix}&c코어 보호 구역에서는 블록을 파괴할 수 없습니다." to player
+
+on place:
+    if world of event-block is not world("{@mg-world}"):
+        stop
+    if {mg::running} is not true:
+        stop
+    if mgInsideBorder(location of event-block) is false:
+        cancel event
+        send "{@mg-prefix}&c결계 밖에서는 블록을 설치할 수 없습니다." to player
+        stop
+    if mgInCoreProtectedArea(location of event-block) is true:
+        cancel event
+        send "{@mg-prefix}&c코어 보호 구역에서는 블록을 설치할 수 없습니다." to player
+
+on join:
+    wait 1 tick
+    set {_team} to mgPlayerTeam(player)
+    if {_team} is not "":
+        mgApplyTeamVisuals(player, {_team})
+    if {mg::running} is true:
+        if {_team} is "":
+            send "{@mg-prefix}&c아직 메인 게임 팀에 배정되지 않았습니다. 운영자에게 알려주세요." to player
+        if {_team} is not "":
+            set {_target} to {mg::target::%{_team}%}
+            send "{@mg-prefix}&e소속 팀: &f%mgTeamKorean({_team})%팀&e, 현재 타겟: &f%mgTeamKorean({_target})%팀" to player
+
+on skript load:
+    mgEnsureScoreboardTeams()
+    mgEnsureLuckPermsGroups()
+    mgSetDefaultCores()
+    if {mg::phase} is not set:
+        mgResetGame()
