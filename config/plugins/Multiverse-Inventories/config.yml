@@ -56,7 +56,7 @@ sharables:
   # When enabled, the last location of the player will be applied for any teleportation.
   # This is useful as you want to use the last location for any teleportation, such as the warp system.
   # When disabled, you can only use `/mv tp ll:worldname` to teleport to the player's last location.
-  apply-last-location-for-all-teleports: true
+  apply-last-location-for-all-teleports: false
   
   # When enabled, we will use paper's improved byte serialization for inventory data.
   # When disabled, we will use the legacy configuration serialization method.

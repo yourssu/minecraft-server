@@ -3,13 +3,13 @@ architecture:
   alias: ''
   allow-advancement-grant: true
   allow-flight: true
-  allow-weather: true
+  allow-weather: false
   anchor-respawn: true
   auto-heal: true
   auto-load: true
   bed-respawn: true
   biome: ''
-  difficulty: easy
+  difficulty: peaceful
   entry-fee:
     enabled: false
     amount: 0.0
