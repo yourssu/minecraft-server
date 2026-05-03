@@ -49,6 +49,7 @@ services:
       ENABLE_COMMAND_BLOCK: "${ENABLE_COMMAND_BLOCK:-FALSE}"
       SNOOPER_ENABLED: "FALSE"
       USE_AIKAR_FLAGS: "${USE_AIKAR_FLAGS:-TRUE}"
+      JVM_OPTS: "-Xbootclasspath/a:/extras/rhino-runtime.jar"
       MODRINTH_PROJECTS: "@/extras/paper-modrinth-plugins.txt"
       PLUGINS: |
         https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/spigot
