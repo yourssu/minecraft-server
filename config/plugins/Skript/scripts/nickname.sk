@@ -1,71 +1,475 @@
 options:
-    prefix: &6Nickname &8> &r
+    prefix: &6닉네임 &8> &r
     min-length: 2
     max-length: 16
+    max-team-size: 4
+    new-team-weight: 1
     allowed-pattern: [A-Za-z0-9_가-힣]+
 
 function applyNickname(p: player):
     if {nickname::%uuid of {_p}%} is set:
         set {_nickname} to {nickname::%uuid of {_p}%}
-        set display name of {_p} to {_nickname}
-        set tab list name of {_p} to {_nickname}
-        execute console command "essentials:nick %name of {_p}% %{_nickname}%"
-        execute console command "tab playeruuid %name of {_p}% customtabname %{_nickname}%"
+        indexNickname({_p}, {_nickname})
+        set {_color} to teamColorCode({_p})
+        set {_formatted} to colored "%{_color}%%{_nickname}%"
+        updateLabel({_p})
+        set display name of {_p} to {_formatted}
+        set tab list name of {_p} to {_formatted}
+        execute console command "essentials:nick %name of {_p}% %{_color}%%{_nickname}%"
+        execute console command "tab playeruuid %name of {_p}% customtabname %{_color}%%{_nickname}%"
+
+function updateLabel(p: player):
+    if {nickname::%uuid of {_p}%} is set:
+        set {_nickname} to {nickname::%uuid of {_p}%}
+        set {label::%uuid of {_p}%} to "%teamMiniColor({_p})%%{_nickname}%</%teamMiniColorName({_p})%>"
 
 function needsNickname(p: player) :: boolean:
     if {nickname::%uuid of {_p}%} is set:
         return false
     return true
 
+function teamColorCode(p: player) :: text:
+    if {team::%uuid of {_p}%} is set:
+        return teamColorCodeById({team::%uuid of {_p}%})
+    return "&f"
+
+function teamColorCodeById(id: number) :: text:
+    set {_slot} to {_id}
+    while {_slot} > 14:
+        remove 14 from {_slot}
+
+    if {_slot} is 1:
+        return "&c"
+    if {_slot} is 2:
+        return "&9"
+    if {_slot} is 3:
+        return "&a"
+    if {_slot} is 4:
+        return "&e"
+    if {_slot} is 5:
+        return "&b"
+    if {_slot} is 6:
+        return "&d"
+    if {_slot} is 7:
+        return "&6"
+    if {_slot} is 8:
+        return "&4"
+    if {_slot} is 9:
+        return "&1"
+    if {_slot} is 10:
+        return "&2"
+    if {_slot} is 11:
+        return "&3"
+    if {_slot} is 12:
+        return "&5"
+    if {_slot} is 13:
+        return "&7"
+    return "&f"
+
+function teamMiniColor(p: player) :: text:
+    return "<%teamMiniColorName({_p})%>"
+
+function teamMiniColorName(p: player) :: text:
+    if {team::%uuid of {_p}%} is set:
+        return teamMiniColorNameById({team::%uuid of {_p}%})
+    return "white"
+
+function teamMiniColorNameById(id: number) :: text:
+    set {_slot} to {_id}
+    while {_slot} > 14:
+        remove 14 from {_slot}
+
+    if {_slot} is 1:
+        return "red"
+    if {_slot} is 2:
+        return "blue"
+    if {_slot} is 3:
+        return "green"
+    if {_slot} is 4:
+        return "yellow"
+    if {_slot} is 5:
+        return "aqua"
+    if {_slot} is 6:
+        return "light_purple"
+    if {_slot} is 7:
+        return "gold"
+    if {_slot} is 8:
+        return "dark_red"
+    if {_slot} is 9:
+        return "dark_blue"
+    if {_slot} is 10:
+        return "dark_green"
+    if {_slot} is 11:
+        return "dark_aqua"
+    if {_slot} is 12:
+        return "dark_purple"
+    if {_slot} is 13:
+        return "gray"
+    return "white"
+
+function teamLabel(p: player) :: text:
+    if {team::%uuid of {_p}%} is set:
+        return "%{team::%uuid of {_p}%}%팀"
+    return "미배정"
+
+function resolvedName(p: player) :: text:
+    if {nickname::%uuid of {_p}%} is set:
+        return {nickname::%uuid of {_p}%}
+    return name of {_p}
+
 function remindNickname(p: player):
-    send "{@prefix}&eSet your server nickname with &f/setnick <name>&e." to {_p}
-    send "{@prefix}&7Allowed: Korean, English, numbers, underscore. Length: {@min-length}-{@max-length}." to {_p}
+    send "{@prefix}&e서버 닉네임을 설정하세요: &f/setnick <닉네임>&e." to {_p}
+    send "{@prefix}&7사용 가능: 한글, 영어, 숫자, 밑줄. 길이: {@min-length}-{@max-length}자." to {_p}
+
+function remindProfile(p: player):
+    if needsNickname({_p}) is true:
+        remindNickname({_p})
+
+function indexNickname(p: player, nickname: text):
+    if {nickname::%uuid of {_p}%} is set:
+        set {_old-nickname} to {nickname::%uuid of {_p}%}
+        set {_old-key} to lowercase {_old-nickname}
+        delete {nickname-index::%{_old-key}%}
+    set {_key} to lowercase {_nickname}
+    set {nickname-index::%{_key}%} to name of {_p}
+
+function resolveNickname(value: text) :: text:
+    set {_key} to lowercase {_value}
+    if {nickname-index::%{_key}%} is set:
+        return {nickname-index::%{_key}%}
+    return {_value}
+
+function resolveNicknameCommand(command: text) :: text:
+    set {_parts::*} to {_command} split at " "
+    delete {_resolved::*}
+    loop {_parts::*}:
+        add resolveNickname(loop-value) to {_resolved::*}
+    return join {_resolved::*} with " "
+
+function setupVanillaTeams():
+    if {team-count} is not set:
+        set {team-count} to 0
+    if {team-count} > 0:
+        loop numbers from 1 to {team-count}:
+            ensureTeam(loop-number)
+
+function teamName(id: number) :: text:
+    return "ys_%{_id}%"
+
+function teamColorName(id: number) :: text:
+    set {_slot} to {_id}
+    while {_slot} > 14:
+        remove 14 from {_slot}
+
+    if {_slot} is 1:
+        return "red"
+    if {_slot} is 2:
+        return "blue"
+    if {_slot} is 3:
+        return "green"
+    if {_slot} is 4:
+        return "yellow"
+    if {_slot} is 5:
+        return "aqua"
+    if {_slot} is 6:
+        return "light_purple"
+    if {_slot} is 7:
+        return "gold"
+    if {_slot} is 8:
+        return "dark_red"
+    if {_slot} is 9:
+        return "dark_blue"
+    if {_slot} is 10:
+        return "dark_green"
+    if {_slot} is 11:
+        return "dark_aqua"
+    if {_slot} is 12:
+        return "dark_purple"
+    if {_slot} is 13:
+        return "gray"
+    return "white"
+
+function ensureTeam(id: number):
+    execute console command "team add %teamName({_id})%"
+    execute console command "team modify %teamName({_id})% color %teamColorName({_id})%"
+
+function teamSize(id: number) :: number:
+    set {_size} to 0
+    loop {team::*}:
+        if loop-value is {_id}:
+            add 1 to {_size}
+    return {_size}
+
+function canCreateRandomTeam() :: boolean:
+    if {team-count} is not set:
+        return true
+    if {team-count} < 1:
+        return true
+
+    loop numbers from 1 to {team-count}:
+        if teamSize(loop-number) < 1:
+            return false
+    return true
+
+function createNextTeam() :: number:
+    if {team-count} is not set:
+        set {team-count} to 0
+    add 1 to {team-count}
+    ensureTeam({team-count})
+    return {team-count}
+
+function randomAvailableTeam() :: number:
+    if {team-count} is not set:
+        set {team-count} to 0
+
+    delete {_available::*}
+    if {team-count} > 0:
+        loop numbers from 1 to {team-count}:
+            if teamSize(loop-number) < {@max-team-size}:
+                add loop-number to {_available::*}
+
+    if canCreateRandomTeam() is true:
+        loop {@new-team-weight} times:
+            add -1 to {_available::*}
+
+    if {_available::*} is set:
+        set {_selected} to random element out of {_available::*}
+        if {_selected} is -1:
+            return createNextTeam()
+        return {_selected}
+
+    return createNextTeam()
+
+function assignTeam(p: player, id: number):
+    if {team-count} is not set:
+        set {team-count} to 0
+    if {_id} > {team-count}:
+        set {team-count} to {_id}
+    ensureTeam({_id})
+    set {team::%uuid of {_p}%} to {_id}
+    execute console command "team join %teamName({_id})% %name of {_p}%"
+
+    applyNickname({_p})
+
+on script load:
+    setupVanillaTeams()
+    loop all players:
+        if {nickname::%uuid of loop-player%} is set:
+            indexNickname(loop-player, {nickname::%uuid of loop-player%})
 
 on join:
     wait 1 second
     if needsNickname(player) is true:
-        remindNickname(player)
-    else:
+        remindProfile(player)
+    if needsNickname(player) is false:
         applyNickname(player)
-        send "{@prefix}&7Your nickname is &f%{nickname::%uuid of player%}%&7. Use &f/setnick <name>&7 to change it." to player
+        send "{@prefix}&7닉네임: %display name of player%&7. 팀: %teamLabel(player)%." to player
 
 command /setnick <text>:
     executable by: players
     trigger:
+        if {nickname::%uuid of player%} is set:
+            if player is not op:
+                send "{@prefix}&c이미 닉네임이 설정되어 있습니다. 변경하려면 운영자에게 문의하세요." to player
+                stop
+
         set {_nickname} to arg-1
 
         if length of {_nickname} < {@min-length}:
-            send "{@prefix}&cNickname is too short. Minimum length is {@min-length}." to player
+            send "{@prefix}&c닉네임이 너무 짧습니다. 최소 {@min-length}자 이상이어야 합니다." to player
             stop
 
         if length of {_nickname} > {@max-length}:
-            send "{@prefix}&cNickname is too long. Maximum length is {@max-length}." to player
+            send "{@prefix}&c닉네임이 너무 깁니다. 최대 {@max-length}자까지 가능합니다." to player
             stop
 
-        if {_nickname} does not match regex "{@allowed-pattern}":
-            send "{@prefix}&cUse only Korean, English, numbers, and underscore." to player
+        if {_nickname} doesn't match "{@allowed-pattern}":
+            send "{@prefix}&c한글, 영어, 숫자, 밑줄만 사용할 수 있습니다." to player
             stop
 
+        indexNickname(player, {_nickname})
         set {nickname::%uuid of player%} to {_nickname}
         applyNickname(player)
-        send "{@prefix}&aYour nickname is now &f%{_nickname}%&a." to player
+        send "{@prefix}&a닉네임이 &f%{_nickname}%&a(으)로 설정되었습니다." to player
+
+command /realname <text>:
+    executable by: players and console
+    trigger:
+        set {_real-name} to resolveNickname(arg-1)
+        if {_real-name} is arg-1:
+            send "{@prefix}&f%arg-1%&c 닉네임을 가진 온라인 플레이어를 찾을 수 없습니다." to sender
+            stop
+
+        send "{@prefix}&f%arg-1% &7= &f%{_real-name}%&7." to sender
+
+command /ncmd <text>:
+    executable by: players and console
+    trigger:
+        if sender is a player:
+            if sender is not op:
+                send "{@prefix}&c닉네임 변환 명령어는 운영자만 사용할 수 있습니다." to sender
+                stop
+
+        set {_resolved-command} to resolveNicknameCommand(arg-1)
+        execute console command {_resolved-command}
+        send "{@prefix}&7실행됨: &f/%{_resolved-command}%&7." to sender
+
+on death of player:
+    set {_victim} to resolvedName(victim)
+    set {_cause} to "%damage cause%"
+    set {_message} to "%{_victim}%은(는) 사망했습니다."
+
+    if attacker is a player:
+        set {_killer} to resolvedName(attacker)
+        if {_cause} is "projectile":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 원거리 공격에 의해 사망했습니다."
+        if {_cause} is "lava":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 끝에 용암에 빠져 사망했습니다."
+        if {_cause} is "fall":
+            set {_message} to "%{_victim}%은(는) %{_killer}%에게 쫓기다 추락사했습니다."
+        if {_cause} is "void":
+            set {_message} to "%{_victim}%은(는) %{_killer}%에게 밀려 허공으로 떨어졌습니다."
+        if {_cause} is "fire":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 공격으로 불타 사망했습니다."
+        if {_cause} is "fire tick":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 공격으로 불타 사망했습니다."
+        if {_cause} is "entity explosion":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 전투 중 폭발로 사망했습니다."
+        if {_cause} is "block explosion":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 전투 중 폭발로 사망했습니다."
+        if {_cause} is "drowning":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와 싸우다 익사했습니다."
+        if {_cause} is "freeze":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 중 얼어 죽었습니다."
+        if {_cause} is "poison":
+            set {_message} to "%{_victim}%은(는) %{_killer}%에게 중독되어 사망했습니다."
+        if {_cause} is "wither":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 저주로 사망했습니다."
+        if {_cause} is "falling block":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 중 낙하한 모루에 깔렸습니다."
+        if {_cause} is "contact":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 중 선인장에 찔려 사망했습니다."
+        if {_cause} is "cramming":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 중 너무 빽빽하게 몰려 사망했습니다."
+        if {_cause} is "hot floor":
+            set {_message} to "%{_victim}%은(는) %{_killer}%의 공격을 피하다 마그마에 타 사망했습니다."
+        if {_cause} is "dryout":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 중 탈수로 사망했습니다."
+        if {_cause} is "sonic boom":
+            set {_message} to "%{_victim}%은(는) %{_killer}%에게 소닉 붐으로 처치당했습니다."
+        if {_cause} is "stalagmite":
+            set {_message} to "%{_victim}%은(는) %{_killer}%와의 전투 중 석순에 꿰였습니다."
+        set death message to {_message}
+    if attacker is not a player:
+        if {_cause} is "fall":
+            set {_message} to "%{_victim}%은(는) 높은 곳에서 떨어져 사망했습니다."
+        if {_cause} is "lava":
+            set {_message} to "%{_victim}%은(는) 용암에 빠져 사망했습니다."
+        if {_cause} is "fire":
+            set {_message} to "%{_victim}%은(는) 불타 사망했습니다."
+        if {_cause} is "fire tick":
+            set {_message} to "%{_victim}%은(는) 불타 사망했습니다."
+        if {_cause} is "entity explosion":
+            set {_message} to "%{_victim}%은(는) 폭발로 사망했습니다."
+        if {_cause} is "block explosion":
+            set {_message} to "%{_victim}%은(는) 폭발로 사망했습니다."
+        if {_cause} is "void":
+            set {_message} to "%{_victim}%은(는) 허공으로 떨어졌습니다."
+        if {_cause} is "drowning":
+            set {_message} to "%{_victim}%은(는) 익사했습니다."
+        if {_cause} is "starvation":
+            set {_message} to "%{_victim}%은(는) 굶어 죽었습니다."
+        if {_cause} is "poison":
+            set {_message} to "%{_victim}%은(는) 중독으로 사망했습니다."
+        if {_cause} is "wither":
+            set {_message} to "%{_victim}%은(는) 위더 효과로 사망했습니다."
+        if {_cause} is "falling block":
+            set {_message} to "%{_victim}%은(는) 떨어진 모루에 깔렸습니다."
+        if {_cause} is "contact":
+            set {_message} to "%{_victim}%은(는) 선인장에 찔려 사망했습니다."
+        if {_cause} is "cramming":
+            set {_message} to "%{_victim}%은(는) 너무 빽빽하게 몰려 사망했습니다."
+        if {_cause} is "hot floor":
+            set {_message} to "%{_victim}%은(는) 마그마에 타 사망했습니다."
+        if {_cause} is "dryout":
+            set {_message} to "%{_victim}%은(는) 탈수로 사망했습니다."
+        if {_cause} is "freeze":
+            set {_message} to "%{_victim}%은(는) 얼어 죽었습니다."
+        if {_cause} is "sonic boom":
+            set {_message} to "%{_victim}%은(는) 소닉 붐에 의해 사망했습니다."
+        if {_cause} is "stalagmite":
+            set {_message} to "%{_victim}%은(는) 석순에 꿰였습니다."
+        set death message to {_message}
+
+command /setteam <integer> [<player>]:
+    executable by: players and console
+    trigger:
+        if sender is a player:
+            if sender is not op:
+                send "{@prefix}&c팀은 서버에서 배정합니다." to sender
+                stop
+
+        if arg-2 is set:
+            set {_target} to arg-2
+        if arg-2 is not set:
+            if sender is a player:
+                set {_target} to player
+            if sender is not a player:
+                send "{@prefix}&c콘솔 또는 커맨드 블록은 플레이어를 지정해야 합니다." to sender
+                stop
+
+        set {_team} to arg-1
+        if {_team} < 1:
+            send "{@prefix}&c팀 번호는 1 이상이어야 합니다." to sender
+            stop
+
+        assignTeam({_target}, {_team})
+        send "{@prefix}&a%teamColorCode({_target})%%teamLabel({_target})%&a에 배정되었습니다." to {_target}
+
+command /setteamrandom [<player>]:
+    executable by: players and console
+    trigger:
+        if sender is a player:
+            if sender is not op:
+                send "{@prefix}&c팀은 서버에서 배정합니다." to sender
+                stop
+
+        if arg-1 is set:
+            set {_target} to arg-1
+        if arg-1 is not set:
+            if sender is a player:
+                set {_target} to player
+            if sender is not a player:
+                send "{@prefix}&c콘솔 또는 커맨드 블록은 플레이어를 지정해야 합니다." to sender
+                stop
+
+        set {_team} to randomAvailableTeam()
+        assignTeam({_target}, {_team})
+        send "{@prefix}&a무작위 팀 배정: %teamColorCode({_target})%%teamLabel({_target})%&a." to {_target}
 
 on chat:
     if needsNickname(player) is true:
         cancel event
-        remindNickname(player)
+        remindProfile(player)
 
 on break:
     if needsNickname(player) is true:
         cancel event
-        remindNickname(player)
+        remindProfile(player)
 
 on place:
     if needsNickname(player) is true:
         cancel event
-        remindNickname(player)
+        remindProfile(player)
 
 on drop:
     if needsNickname(player) is true:
         cancel event
-        remindNickname(player)
+        remindProfile(player)
+
+on sneak toggle:
+    wait 1 tick
+    if player is sneaking:
+        set {label::%uuid of player%} to ""
+    if player is not sneaking:
+        updateLabel(player)

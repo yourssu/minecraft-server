@@ -43,6 +43,7 @@
 | PacketEvents | DisplayTags 패킷 의존성 |
 | DisplayTags | 플레이어 머리 위 닉네임 표시 |
 | Skript | 접속 후 닉네임 설정 흐름 |
+| FoxPapiSkriptExpansion | Skript 변수를 PlaceholderAPI로 노출 |
 | GrimAC | 이동/전투 핵 감지 |
 | CoreProtect | 블록 로그 및 롤백 |
 | EssentialsX | 기본 편의 명령 |
@@ -80,7 +81,7 @@ config/
 │   ├── floodgate/
 │   │   └── config.yml          # Floodgate 설정 (prefix: ".")
 │   ├── DisplayTags/
-│   │   └── config.yml          # 머리 위 이름표: %player_displayname%
+│   │   └── config.yml          # 머리 위 이름표: %skript_label.uuid%
 │   ├── Essentials/
 │   │   └── config.yml          # /nick 표시 이름 설정
 │   └── Skript/
@@ -110,18 +111,45 @@ Skript가 `config/plugins/Skript/scripts/nickname.sk`를 로드한다.
 - 길이: 2-16자
 - 닉네임은 UUID 기준으로 저장되어 재접속 시 자동 적용된다.
 - `/setnick`은 Skript 저장값, EssentialsX 닉네임, TAB 플레이어 목록 이름을 함께 갱신한다.
-- 머리 위 이름표는 DisplayTags가 `%player_displayname%` 기반으로 표시한다.
-- `%player_displayname%`는 PlaceholderAPI `Player` expansion이 필요하며, 서버 시작 시 `RCON_CMDS_STARTUP`에서 자동 설치/로드한다.
+- `/setnick`은 일반 플레이어 기준 최초 1회만 허용된다. OP는 재설정할 수 있다.
+- 머리 위 이름표는 DisplayTags가 `%skript_label.uuid%` 기반으로 표시한다.
+- `%skript_label.uuid%`는 FoxPapiSkriptExpansion을 통해 Skript 변수 `{label::%player uuid%}`를 읽는다.
 - EssentialsX `nickname-prefix`는 빈 값이고 `max-nick-length`는 16이다.
+
+## 닉네임 명령 실행
+
+Minecraft vanilla command target은 계정 원래 이름을 기준으로 동작한다.
+Skript가 닉네임 인덱스를 관리하고, OP/콘솔용 resolver 명령을 제공한다.
+
+- `/realname <nickname>`: 닉네임에 대응되는 원래 계정명을 조회한다.
+- `/ncmd <command>`: 명령 인자의 닉네임을 원래 계정명으로 치환한 뒤 콘솔에서 실행한다.
+- 예: `/ncmd tp 홍길동 0 80 0` → 닉네임 `홍길동`의 실제 계정명으로 `/tp` 실행.
+- 일반 플레이어는 `/ncmd`를 실행할 수 없다.
+- `/ncmd` 실행 내역은 서버 로그에는 남지만 일반 non-OP 채팅에는 표시되지 않는다.
+- 사망 메시지는 Skript가 상황별 한국어 문구를 직접 생성해서 닉네임을 사용한다.
+
+## 팀 선택
+
+Skript가 필요한 만큼 numbered vanilla team을 생성한다. 팀당 최대 인원은 4명이다.
+
+- 채팅 버튼 UI는 사용하지 않는다.
+- 팀은 OP 또는 콘솔/커맨드 블록이 `/setteam <번호> [player]` 또는 `/setteamrandom [player]`로 지정한다.
+- 일반 플레이어가 직접 `/setteam`, `/setteamrandom`을 실행하면 거부된다.
+- 월드 안의 버튼/커맨드 블록에서 랜덤 팀을 배정하려면 `setteamrandom @p`를 실행한다.
+- `/setteamrandom`은 4명 미만인 기존 팀과 새 팀 생성 후보 중 하나를 무작위로 선택한다.
+- 새 팀 생성 후보는 모든 기존 팀에 최소 1명 이상 있을 때부터 포함된다.
+- 선택한 팀 번호는 UUID 기준으로 저장되어 재접속 시 자동 적용된다.
+- 팀 색상은 EssentialsX/TAB 표시 이름에 적용되고, DisplayTags가 머리 위 닉네임 라벨에 같은 색상을 표시한다.
+- 플레이어가 Shift로 웅크리면 머리 위 DisplayTags 라벨을 숨기고, 일어서면 다시 표시한다.
+- 팀 색상은 팀 번호 기준으로 순환 적용된다.
 
 운영 중 스크립트만 다시 로드:
 ```bash
 docker exec minecraft-paper rcon-cli "skript reload nickname"
 ```
 
-PlaceholderAPI Player expansion과 DisplayTags를 수동으로 다시 로드:
+PlaceholderAPI와 DisplayTags를 수동으로 다시 로드:
 ```bash
-docker exec minecraft-paper rcon-cli "papi ecloud download Player"
 docker exec minecraft-paper rcon-cli "papi reload"
 docker exec minecraft-paper rcon-cli "displaytags reload"
 ```

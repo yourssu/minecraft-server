@@ -5,7 +5,7 @@ nametags:
   visibility-distance: 48
   display:
     lines:
-      - "%player_displayname%"
+      - "%skript_label.uuid%"
     text-shadow: true
     see-through: false
     text-alignment: "center"

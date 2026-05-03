@@ -7,6 +7,7 @@ paper:placeholderapi
 paper:packetevents
 paper:displaytags
 paper:skript
+paper:foxpapiskriptexpansion
 # Pinned by Modrinth version ID — compatibility metadata lags behind 1.21.11.
 paper:grimac:5K81jsel
 paper:coreprotect:HD2IvrxS
