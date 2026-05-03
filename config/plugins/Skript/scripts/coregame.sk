@@ -1,0 +1,340 @@
+options:
+    cg-prefix: &cCoreGame &8> &r
+    cg-world: world
+    cg-core-hp: 500
+    cg-end-teleport-x: 0
+    cg-end-teleport-y: 80
+    cg-end-teleport-z: 0
+    cg-build-phase-seconds: 600
+    cg-border-radius: 320
+    cg-core-protect-radius: 4
+
+function cgTeamList() :: objects:
+    set {_teams::*} to "Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Purple"
+    return {_teams::*}
+
+function cgDefaultTarget(team: text) :: text:
+    if {_team} is "Red":
+        return "Orange"
+    if {_team} is "Orange":
+        return "Yellow"
+    if {_team} is "Yellow":
+        return "Green"
+    if {_team} is "Green":
+        return "Blue"
+    if {_team} is "Blue":
+        return "Indigo"
+    if {_team} is "Indigo":
+        return "Purple"
+    if {_team} is "Purple":
+        return "Red"
+    return ""
+
+function cgNextTeam(team: text) :: text:
+    return cgDefaultTarget({_team})
+
+function cgIsValidTeam(team: text) :: boolean:
+    loop cgTeamList():
+        if loop-value is {_team}:
+            return true
+    return false
+
+function cgTeamByCore(loc: location) :: text:
+    loop cgTeamList():
+        set {_coreLoc} to {coreloc::%loop-value%}
+        if {_coreLoc} is set:
+            if world of {_coreLoc} is world of {_loc}:
+                if x-coordinate of {_coreLoc} is x-coordinate of {_loc}:
+                    if y-coordinate of {_coreLoc} is y-coordinate of {_loc}:
+                        if z-coordinate of {_coreLoc} is z-coordinate of {_loc}:
+                            return loop-value
+    return ""
+
+function cgIsInsideBorder(loc: location) :: boolean:
+    set {_x} to x-coordinate of {_loc}
+    set {_z} to z-coordinate of {_loc}
+    if ({_x} * {_x}) + ({_z} * {_z}) <= ({@cg-border-radius} * {@cg-border-radius}):
+        return true
+    return false
+
+function cgIsInCoreProtectedRadius(loc: location) :: boolean:
+    loop cgTeamList():
+        set {_coreLoc} to {coreloc::%loop-value%}
+        if {_coreLoc} is set:
+            if world of {_coreLoc} is world of {_loc}:
+                if distance between {_coreLoc} and {_loc} <= {@cg-core-protect-radius}:
+                    return true
+    return false
+
+function cgPlayerTeam(p: player) :: text:
+    return {playerteam::%uuid of {_p}%}
+
+function cgGroupName(team: text) :: text:
+    if {_team} is "Red":
+        return "team_red"
+    if {_team} is "Orange":
+        return "team_orange"
+    if {_team} is "Yellow":
+        return "team_yellow"
+    if {_team} is "Green":
+        return "team_green"
+    if {_team} is "Blue":
+        return "team_blue"
+    if {_team} is "Indigo":
+        return "team_indigo"
+    if {_team} is "Purple":
+        return "team_purple"
+    return ""
+
+function cgAssignPlayerToTeamGroup(op: offlineplayer, team: text):
+    set {_newGroup} to cgGroupName({_team})
+    if {_newGroup} is "":
+        stop
+    loop cgTeamList():
+        set {_oldGroup} to cgGroupName(loop-value)
+        if {_oldGroup} is not "":
+            execute console command "lp user %name of {_op}% parent remove %{_oldGroup}%"
+    execute console command "lp user %name of {_op}% parent add %{_newGroup}%"
+
+function cgAliveCount() :: number:
+    set {_count} to 0
+    loop cgTeamList():
+        if {alive::%loop-value%} is true:
+            add 1 to {_count}
+    return {_count}
+
+function cgFindNextAlive(startTeam: text, maxHops: number) :: text:
+    set {_cursor} to {_startTeam}
+    loop {_maxHops} times:
+        set {_cursor} to cgNextTeam({_cursor})
+        if {_cursor} is "":
+            return ""
+        if {alive::%{_cursor}%} is true:
+            return {_cursor}
+    return ""
+
+function cgInitializeCoreLocations():
+    set {_w} to world("{@cg-world}")
+    if {_w} is not set:
+        broadcast "{@cg-prefix}&cWorld '{@cg-world}' not found. Core locations were not initialized."
+        stop
+    set {coreloc::Red} to location(100, 65, 200, {_w})
+    set {coreloc::Orange} to location(220, 65, 120, {_w})
+    set {coreloc::Yellow} to location(220, 65, -40, {_w})
+    set {coreloc::Green} to location(100, 65, -120, {_w})
+    set {coreloc::Blue} to location(-20, 65, -120, {_w})
+    set {coreloc::Indigo} to location(-140, 65, -40, {_w})
+    set {coreloc::Purple} to location(-140, 65, 120, {_w})
+
+function cgEnsureTeams():
+    loop cgTeamList():
+        execute console command "team add %loop-value%"
+    execute console command "team modify Red color red"
+    execute console command "team modify Orange color gold"
+    execute console command "team modify Yellow color yellow"
+    execute console command "team modify Green color green"
+    execute console command "team modify Blue color blue"
+    execute console command "team modify Indigo color dark_blue"
+    execute console command "team modify Purple color dark_purple"
+
+function cgEnsureLuckPermsGroups():
+    execute console command "lp creategroup team_red"
+    execute console command "lp creategroup team_orange"
+    execute console command "lp creategroup team_yellow"
+    execute console command "lp creategroup team_green"
+    execute console command "lp creategroup team_blue"
+    execute console command "lp creategroup team_indigo"
+    execute console command "lp creategroup team_purple"
+
+function cgStartGame():
+    cgEnsureTeams()
+    cgEnsureLuckPermsGroups()
+    cgInitializeCoreLocations()
+    loop cgTeamList():
+        set {corehp::%loop-value%} to {@cg-core-hp}
+        set {target::%loop-value%} to cgDefaultTarget(loop-value)
+        set {alive::%loop-value%} to true
+    set {coregame::running} to true
+    set {coregame::phase} to "build"
+    set {coregame::combat-unlock-at} to now
+    add {@cg-build-phase-seconds} seconds to {coregame::combat-unlock-at}
+    execute console command "gamerule pvp false"
+    broadcast "{@cg-prefix}&aCore game started. Build phase is active."
+    broadcast "{@cg-prefix}&eCombat unlocks in {@cg-build-phase-seconds} seconds."
+    wait {@cg-build-phase-seconds} seconds
+    if {coregame::running} is true:
+        set {coregame::phase} to "combat"
+        execute console command "gamerule pvp true"
+        broadcast "{@cg-prefix}&cCombat phase started! PvP and core attacks are now enabled."
+
+function cgStopGame():
+    set {coregame::running} to false
+    set {coregame::phase} to "stopped"
+    execute console command "gamerule pvp false"
+    broadcast "{@cg-prefix}&eCore game stopped."
+
+function cgEliminateTeam(deadTeam: text, killerTeam: text):
+    if {alive::%{_deadTeam}%} is not true:
+        stop
+    set {_deadTarget} to {target::%{_deadTeam}%}
+    set {alive::%{_deadTeam}%} to false
+    set {corehp::%{_deadTeam}%} to 0
+    loop all players:
+        if cgPlayerTeam(loop-player) is {_deadTeam}:
+            set gamemode of loop-player to spectator
+            send "{@cg-prefix}&cYour team has been eliminated." to loop-player
+
+    if {_killerTeam} is set:
+        set {_newTarget} to {_deadTarget}
+        if {_newTarget} is not set or {_newTarget} is "":
+            set {_newTarget} to cgFindNextAlive({_deadTeam}, 7)
+        if {_newTarget} is {_deadTeam}:
+            set {_newTarget} to cgFindNextAlive({_newTarget}, 7)
+        if {_newTarget} is set:
+            if {alive::%{_newTarget}%} is not true:
+                set {_newTarget} to cgFindNextAlive({_newTarget}, 7)
+        if {_newTarget} is set and {_newTarget} is not "":
+            set {target::%{_killerTeam}%} to {_newTarget}
+            broadcast "{@cg-prefix}&6%{_killerTeam}% &fteam eliminated &c%{_deadTeam}%&f. New target: &e%{_newTarget}%&f."
+        else:
+            broadcast "{@cg-prefix}&6%{_killerTeam}% &fteam eliminated &c%{_deadTeam}%&f."
+
+    set {_aliveCount} to cgAliveCount()
+    if {_aliveCount} <= 1:
+        set {_winner} to ""
+        loop cgTeamList():
+            if {alive::%loop-value%} is true:
+                set {_winner} to loop-value
+        set {coregame::running} to false
+        set {coregame::phase} to "ended"
+        execute console command "gamerule pvp false"
+        if {_winner} is not "":
+            broadcast "{@cg-prefix}&b%{_winner}% &fteam wins the game!"
+        else:
+            broadcast "{@cg-prefix}&fGame ended with no winner."
+        wait 5 seconds
+        set {_w} to world("{@cg-world}")
+        if {_w} is set:
+            set {_endLoc} to location({@cg-end-teleport-x}, {@cg-end-teleport-y}, {@cg-end-teleport-z}, {_w})
+            loop all players:
+                teleport loop-player to {_endLoc}
+            broadcast "{@cg-prefix}&7All players were teleported to the end location."
+        else:
+            broadcast "{@cg-prefix}&cTeleport skipped: world '{@cg-world}' not found."
+
+command /coregame <text>:
+    permission: op
+    trigger:
+        if arg-1 is "start":
+            cgStartGame()
+            stop
+        if arg-1 is "stop":
+            cgStopGame()
+            stop
+        if arg-1 is "status":
+            send "{@cg-prefix}&fRunning: &e%{coregame::running}%" to player
+            send "{@cg-prefix}&fPhase: &e%{coregame::phase}%" to player
+            send "{@cg-prefix}&fCombat unlock at: &e%{coregame::combat-unlock-at}%" to player
+            loop cgTeamList():
+                send "{@cg-prefix}&7%loop-value%&f | Alive: &e%{alive::%loop-value%%}%&f | HP: &e%{corehp::%loop-value%%}%&f | Target: &e%{target::%loop-value%%}%" to player
+            stop
+        send "{@cg-prefix}&7Usage: /coregame <start|stop|status>" to player
+
+command /setteam <offlineplayer> <text>:
+    permission: op
+    trigger:
+        set {_team} to arg-2
+        if cgIsValidTeam({_team}) is false:
+            send "{@cg-prefix}&cInvalid team. Use: Red, Orange, Yellow, Green, Blue, Indigo, Purple." to player
+            stop
+        set {playerteam::%uuid of arg-1%} to {_team}
+        cgAssignPlayerToTeamGroup(arg-1, {_team})
+        send "{@cg-prefix}&aAssigned %arg-1% to team &e%{_team}%&a." to player
+        if arg-1 is online:
+            send "{@cg-prefix}&aYour team is now &e%{_team}%&a." to arg-1
+
+command /setcore <text>:
+    permission: op
+    trigger:
+        set {_team} to arg-1
+        if cgIsValidTeam({_team}) is false:
+            send "{@cg-prefix}&cInvalid team." to player
+            stop
+        set {_b} to targeted block
+        if {_b} is not set:
+            send "{@cg-prefix}&cLook at a block and try again." to player
+            stop
+        set {coreloc::%{_team}%} to location of {_b}
+        send "{@cg-prefix}&aCore for &e%{_team}% &aset to &f%x-coordinate of location of {_b}%, %y-coordinate of location of {_b}%, %z-coordinate of location of {_b}%&a."
+
+on left click on block:
+    if {coregame::running} is not true:
+        stop
+    if {coregame::phase} is not "combat":
+        stop
+    set {_clickedBlock} to event-block
+    set {_coreTeam} to cgTeamByCore(location of {_clickedBlock})
+    if {_coreTeam} is "":
+        stop
+
+    cancel event
+
+    set {_attackerTeam} to cgPlayerTeam(player)
+    if {_attackerTeam} is not set or {_attackerTeam} is "":
+        send "{@cg-prefix}&cYou are not assigned to a team." to player
+        stop
+    if {alive::%{_attackerTeam}%} is not true:
+        send "{@cg-prefix}&cYour team is already eliminated." to player
+        stop
+
+    set {_targetTeam} to {target::%{_attackerTeam}%}
+    if {_targetTeam} is not set or {_targetTeam} is "":
+        send "{@cg-prefix}&cYour target is not set." to player
+        stop
+
+    if {_coreTeam} is {_targetTeam}:
+        if {alive::%{_coreTeam}%} is not true:
+            send "{@cg-prefix}&cThat team is already eliminated." to player
+            stop
+        if tool of player is not diamond sword:
+            send "{@cg-prefix}&cYou must use a diamond sword to damage a core."
+            stop
+        remove 1 from {corehp::%{_coreTeam}%}
+        if {corehp::%{_coreTeam}%} < 0:
+            set {corehp::%{_coreTeam}%} to 0
+        send "{@cg-prefix}&aHit! &e%{_coreTeam}% &fcore HP: &c%{corehp::%{_coreTeam}%}%" to player
+        if {corehp::%{_coreTeam}%} <= 0:
+            cgEliminateTeam({_coreTeam}, {_attackerTeam})
+        stop
+
+    if {_coreTeam} is {_attackerTeam}:
+        send "{@cg-prefix}&cYou cannot attack your own core." to player
+        stop
+
+    send "{@cg-prefix}&cNot your target. Find &e%{_targetTeam}% &cteam core." to player
+
+on break:
+    if world of event-block is not world("{@cg-world}"):
+        stop
+    if cgIsInsideBorder(location of event-block) is false:
+        cancel event
+        send "{@cg-prefix}&cYou cannot break blocks outside the border (R={@cg-border-radius})." to player
+        stop
+    if cgIsInCoreProtectedRadius(location of event-block) is true:
+        cancel event
+        send "{@cg-prefix}&cCore protected zone blocks cannot be broken." to player
+
+on place:
+    if world of event-block is not world("{@cg-world}"):
+        stop
+    if cgIsInsideBorder(location of event-block) is false:
+        cancel event
+        send "{@cg-prefix}&cYou cannot place blocks outside the border (R={@cg-border-radius})." to player
+        stop
+    if cgIsInCoreProtectedRadius(location of event-block) is true:
+        cancel event
+        send "{@cg-prefix}&cYou cannot place blocks in a core protected zone." to player
+
+on skript load:
+    cgEnsureTeams()
+    cgEnsureLuckPermsGroups()
