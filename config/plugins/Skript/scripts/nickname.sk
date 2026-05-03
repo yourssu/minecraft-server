@@ -1,0 +1,71 @@
+options:
+    prefix: &6Nickname &8> &r
+    min-length: 2
+    max-length: 16
+    allowed-pattern: [A-Za-z0-9_가-힣]+
+
+function applyNickname(p: player):
+    if {nickname::%uuid of {_p}%} is set:
+        set {_nickname} to {nickname::%uuid of {_p}%}
+        set display name of {_p} to {_nickname}
+        set tab list name of {_p} to {_nickname}
+        execute console command "essentials:nick %name of {_p}% %{_nickname}%"
+        execute console command "tab playeruuid %name of {_p}% customtabname %{_nickname}%"
+
+function needsNickname(p: player) :: boolean:
+    if {nickname::%uuid of {_p}%} is set:
+        return false
+    return true
+
+function remindNickname(p: player):
+    send "{@prefix}&eSet your server nickname with &f/setnick <name>&e." to {_p}
+    send "{@prefix}&7Allowed: Korean, English, numbers, underscore. Length: {@min-length}-{@max-length}." to {_p}
+
+on join:
+    wait 1 second
+    if needsNickname(player) is true:
+        remindNickname(player)
+    else:
+        applyNickname(player)
+        send "{@prefix}&7Your nickname is &f%{nickname::%uuid of player%}%&7. Use &f/setnick <name>&7 to change it." to player
+
+command /setnick <text>:
+    executable by: players
+    trigger:
+        set {_nickname} to arg-1
+
+        if length of {_nickname} < {@min-length}:
+            send "{@prefix}&cNickname is too short. Minimum length is {@min-length}." to player
+            stop
+
+        if length of {_nickname} > {@max-length}:
+            send "{@prefix}&cNickname is too long. Maximum length is {@max-length}." to player
+            stop
+
+        if {_nickname} does not match regex "{@allowed-pattern}":
+            send "{@prefix}&cUse only Korean, English, numbers, and underscore." to player
+            stop
+
+        set {nickname::%uuid of player%} to {_nickname}
+        applyNickname(player)
+        send "{@prefix}&aYour nickname is now &f%{_nickname}%&a." to player
+
+on chat:
+    if needsNickname(player) is true:
+        cancel event
+        remindNickname(player)
+
+on break:
+    if needsNickname(player) is true:
+        cancel event
+        remindNickname(player)
+
+on place:
+    if needsNickname(player) is true:
+        cancel event
+        remindNickname(player)
+
+on drop:
+    if needsNickname(player) is true:
+        cancel event
+        remindNickname(player)

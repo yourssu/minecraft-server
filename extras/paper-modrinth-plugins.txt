@@ -4,6 +4,9 @@ paper:worldedit
 paper:worldguard
 paper:chunky
 paper:placeholderapi
+paper:packetevents
+paper:displaytags
+paper:skript
 # Pinned by Modrinth version ID — compatibility metadata lags behind 1.21.11.
 paper:grimac:5K81jsel
 paper:coreprotect:HD2IvrxS

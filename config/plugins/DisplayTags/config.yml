@@ -1,0 +1,17 @@
+nametags:
+  enabled: true
+  show-self: true
+  update-interval: 1
+  visibility-distance: 48
+  display:
+    lines:
+      - "%player_displayname%"
+    text-shadow: true
+    see-through: false
+    text-alignment: "center"
+    background: "transparent"
+    billboard: "center"
+    scale:
+      x: 1
+      y: 1
+      z: 1

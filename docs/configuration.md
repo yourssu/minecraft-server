@@ -40,6 +40,9 @@
 | WorldGuard | 지역 보호 |
 | Chunky | 청크 프리젠 |
 | PlaceholderAPI | 플러그인 간 변수 연동 |
+| PacketEvents | DisplayTags 패킷 의존성 |
+| DisplayTags | 플레이어 머리 위 닉네임 표시 |
+| Skript | 접속 후 닉네임 설정 흐름 |
 | GrimAC | 이동/전투 핵 감지 |
 | CoreProtect | 블록 로그 및 롤백 |
 | EssentialsX | 기본 편의 명령 |
@@ -74,8 +77,15 @@ config/
 ├── plugins/
 │   ├── Geyser-Spigot/
 │   │   └── config.yml          # Geyser 설정 (auth-type: floodgate)
-│   └── floodgate/
-│       └── config.yml          # Floodgate 설정 (prefix: ".")
+│   ├── floodgate/
+│   │   └── config.yml          # Floodgate 설정 (prefix: ".")
+│   ├── DisplayTags/
+│   │   └── config.yml          # 머리 위 이름표: %player_displayname%
+│   ├── Essentials/
+│   │   └── config.yml          # /nick 표시 이름 설정
+│   └── Skript/
+│       └── scripts/
+│           └── nickname.sk     # 접속 후 /setnick 닉네임 설정
 └── config/
     └── paper-world-defaults.yml  # Anti-Xray 설정
 ```
@@ -87,6 +97,34 @@ config/
 
 `data/` 에서 직접 수정한 내용은 재시작 시 사라진다.
 **영속적 설정은 반드시 `config/` 에서 관리한다.**
+
+---
+
+## 닉네임 설정
+
+Skript가 `config/plugins/Skript/scripts/nickname.sk`를 로드한다.
+
+- 닉네임이 없는 플레이어는 접속 후 `/setnick <닉네임>`을 입력해야 한다.
+- 닉네임을 설정하기 전에는 채팅, 블록 파괴/설치, 아이템 버리기가 차단된다.
+- 허용 문자: 한글, 영문, 숫자, `_`
+- 길이: 2-16자
+- 닉네임은 UUID 기준으로 저장되어 재접속 시 자동 적용된다.
+- `/setnick`은 Skript 저장값, EssentialsX 닉네임, TAB 플레이어 목록 이름을 함께 갱신한다.
+- 머리 위 이름표는 DisplayTags가 `%player_displayname%` 기반으로 표시한다.
+- `%player_displayname%`는 PlaceholderAPI `Player` expansion이 필요하며, 서버 시작 시 `RCON_CMDS_STARTUP`에서 자동 설치/로드한다.
+- EssentialsX `nickname-prefix`는 빈 값이고 `max-nick-length`는 16이다.
+
+운영 중 스크립트만 다시 로드:
+```bash
+docker exec minecraft-paper rcon-cli "skript reload nickname"
+```
+
+PlaceholderAPI Player expansion과 DisplayTags를 수동으로 다시 로드:
+```bash
+docker exec minecraft-paper rcon-cli "papi ecloud download Player"
+docker exec minecraft-paper rcon-cli "papi reload"
+docker exec minecraft-paper rcon-cli "displaytags reload"
+```
 
 ---
 

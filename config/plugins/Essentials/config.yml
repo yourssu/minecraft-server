@@ -1,0 +1,5 @@
+nickname-prefix: ''
+max-nick-length: 16
+ignore-colors-in-max-nick-length: true
+change-displayname: true
+change-playerlist: false

@@ -39,6 +39,10 @@ services:
       OPS: "${OPS:-}"
       ENABLE_RCON: "TRUE"
       RCON_PASSWORD: "${RCON_PASSWORD:-change-this-now}"
+      RCON_CMDS_STARTUP: |-
+        papi ecloud download Player
+        papi reload
+        displaytags reload
       ENABLE_QUERY: "${ENABLE_QUERY:-FALSE}"
       PVP: "${PVP:-TRUE}"
       ALLOW_FLIGHT: "${ALLOW_FLIGHT:-FALSE}"
