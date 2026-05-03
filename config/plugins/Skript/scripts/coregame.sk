@@ -71,33 +71,6 @@ function cgIsInCoreProtectedRadius(loc: location) :: boolean:
 function cgPlayerTeam(p: player) :: text:
     return {playerteam::%uuid of {_p}%}
 
-function cgGroupName(team: text) :: text:
-    if {_team} is "Red":
-        return "team_red"
-    if {_team} is "Orange":
-        return "team_orange"
-    if {_team} is "Yellow":
-        return "team_yellow"
-    if {_team} is "Green":
-        return "team_green"
-    if {_team} is "Blue":
-        return "team_blue"
-    if {_team} is "Indigo":
-        return "team_indigo"
-    if {_team} is "Purple":
-        return "team_purple"
-    return ""
-
-function cgAssignPlayerToTeamGroup(op: offlineplayer, team: text):
-    set {_newGroup} to cgGroupName({_team})
-    if {_newGroup} is "":
-        stop
-    loop cgTeamList():
-        set {_oldGroup} to cgGroupName(loop-value)
-        if {_oldGroup} is not "":
-            execute console command "lp user %name of {_op}% parent remove %{_oldGroup}%"
-    execute console command "lp user %name of {_op}% parent add %{_newGroup}%"
-
 function cgAliveCount() :: number:
     set {_count} to 0
     loop cgTeamList():
@@ -128,29 +101,7 @@ function cgInitializeCoreLocations():
     set {coreloc::Indigo} to location(-140, 65, -40, {_w})
     set {coreloc::Purple} to location(-140, 65, 120, {_w})
 
-function cgEnsureTeams():
-    loop cgTeamList():
-        execute console command "team add %loop-value%"
-    execute console command "team modify Red color red"
-    execute console command "team modify Orange color gold"
-    execute console command "team modify Yellow color yellow"
-    execute console command "team modify Green color green"
-    execute console command "team modify Blue color blue"
-    execute console command "team modify Indigo color dark_blue"
-    execute console command "team modify Purple color dark_purple"
-
-function cgEnsureLuckPermsGroups():
-    execute console command "lp creategroup team_red"
-    execute console command "lp creategroup team_orange"
-    execute console command "lp creategroup team_yellow"
-    execute console command "lp creategroup team_green"
-    execute console command "lp creategroup team_blue"
-    execute console command "lp creategroup team_indigo"
-    execute console command "lp creategroup team_purple"
-
 function cgStartGame():
-    cgEnsureTeams()
-    cgEnsureLuckPermsGroups()
     cgInitializeCoreLocations()
     loop cgTeamList():
         set {corehp::%loop-value%} to {@cg-core-hp}
@@ -255,7 +206,6 @@ command /setteam <offlineplayer> <text>:
             send "{@cg-prefix}&cInvalid team. Use: Red, Orange, Yellow, Green, Blue, Indigo, Purple." to player
             stop
         set {playerteam::%uuid of arg-1%} to {_team}
-        cgAssignPlayerToTeamGroup(arg-1, {_team})
         send "{@cg-prefix}&aAssigned %arg-1% to team &e%{_team}%&a." to player
         if arg-1 is online:
             send "{@cg-prefix}&aYour team is now &e%{_team}%&a." to arg-1
@@ -349,7 +299,3 @@ on place:
     if cgIsInCoreProtectedRadius(location of event-block) is true:
         cancel event
         send "{@cg-prefix}&cYou cannot place blocks in a core protected zone." to player
-
-on skript load:
-    cgEnsureTeams()
-    cgEnsureLuckPermsGroups()
