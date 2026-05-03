@@ -191,3 +191,6 @@ services:
 networks:
   mc-proxy:
     external: true
+
+environment:
+  - EXIT_CODE=${DRONE_SSH_PREV_COMMAND_EXIT_CODE:-0}
