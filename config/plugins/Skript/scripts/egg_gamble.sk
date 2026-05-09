@@ -76,7 +76,11 @@ function egFinishRound(p: player):
     send "{@eg-prefix}&7결과를 정리하고 초기 상태로 되돌렸습니다." to {_p}
 
 on right click with egg:
-    if egIsGambleEgg(event-item) is false:
+    if player's tool is not egg:
+        cancel event
+        send "{@eg-prefix}&c자연에서 얻은 일반 계란은 사용할 수 없습니다." to player
+        stop
+    if "%name of player's tool%" does not contain "도박용 계란":
         cancel event
         send "{@eg-prefix}&c자연에서 얻은 일반 계란은 사용할 수 없습니다." to player
         stop
