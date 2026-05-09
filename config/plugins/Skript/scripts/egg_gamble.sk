@@ -3,9 +3,24 @@ options:
     eg-egg-name: &e도박용 계란
     eg-egg-lore: &7egg-gamble
     eg-eggs-per-round: 10
-    eg-emeralds-per-chick: 1
+    eg-emeralds-per-bundle: 5
     eg-result-seconds: 5
     eg-track-radius: 48
+
+function egPayout(chicks: number) :: number:
+    if {_chicks} <= 2:
+        return 0
+    if {_chicks} is 3:
+        return 1
+    if {_chicks} is 4:
+        return 2
+    if {_chicks} is 5:
+        return 5
+    if {_chicks} <= 8:
+        return 10
+    if {_chicks} <= 10:
+        return 50
+    return 50
 
 function egIsGambleEgg(i: item) :: boolean:
     if {_i} is not egg:
@@ -34,7 +49,7 @@ function egFinishRound(p: player):
     if {_chicks} is not set:
         set {_chicks} to 0
 
-    set {_pay} to {_chicks} * {@eg-emeralds-per-chick}
+    set {_pay} to egPayout({_chicks})
     if {_pay} > 0:
         give {_pay} of emerald to {_p}
 
@@ -101,15 +116,24 @@ on spawn of chicken:
     add "%uuid of event-entity%" to {eg::round-chick::%{_owner-id}%::*}
     send action bar "&e계란도박 &8| &f%{eg::throws::%{_owner-id}%}%&7/{@eg-eggs-per-round} &8| &e새끼 닭 %{eg::chicks::%{_owner-id}%}%마리" to {_owner}
 
-command /egg-gamble-egg [<number>]:
-    permission: op
+command /egg-gamble-egg <player>:
     trigger:
-        set {_amount} to 10
-        if arg-1 is set:
-            set {_amount} to arg-1
+        if sender is a player:
+            if sender is not op:
+                send "{@eg-prefix}&c이 명령어는 운영자 또는 커맨드 블럭만 사용할 수 있습니다." to sender
+                stop
+
+        set {_target} to arg-1
+        set {_amount} to {@eg-eggs-per-round}
+        set {_cost} to {@eg-emeralds-per-bundle}
+        if {_target} does not have {_cost} of emerald:
+            send "{@eg-prefix}&c에메랄드가 부족합니다. &7필요: &a%{_cost}%개" to {_target}
+            stop
+
+        remove {_cost} of emerald from {_target}
         set {_egg} to egg named colored "{@eg-egg-name}" with lore colored "{@eg-egg-lore}"
-        give {_amount} of {_egg} to player
-        send "{@eg-prefix}&f도박용 계란 %{_amount}%개를 지급했습니다." to player
+        give {_amount} of {_egg} to {_target}
+        send "{@eg-prefix}&a에메랄드 %{_cost}%개&7를 지불하고 &f도박용 계란 %{_amount}%개&7를 구매했습니다." to {_target}
 
 command /egg-gamble-reset:
     permission: op
