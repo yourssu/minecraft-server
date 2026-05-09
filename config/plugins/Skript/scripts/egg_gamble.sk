@@ -43,9 +43,10 @@ function egFinishRound(p: player):
     wait {@eg-result-seconds} seconds
 
     loop {eg::round-chick::%{_id}%::*}:
-        set {_chick} to loop-value
-        if {_chick} is set:
-            kill {_chick}
+        set {_chick-id} to loop-value
+        loop all chickens:
+            if "%uuid of loop-entity%" is "%{_chick-id}%":
+                kill loop-entity
 
     egResetRound({_p})
     send "{@eg-prefix}&7결과를 정리하고 초기 상태로 되돌렸습니다." to {_p}
@@ -75,7 +76,7 @@ on right click with egg:
 on spawn of chicken:
     if spawn reason is not egg:
         stop
-    if event-entity is not baby:
+    if event-entity is not a baby:
         stop
 
     set {_owner} to nothing
@@ -97,7 +98,7 @@ on spawn of chicken:
 
     set {_owner-id} to uuid of {_owner}
     add 1 to {eg::chicks::%{_owner-id}%}
-    add event-entity to {eg::round-chick::%{_owner-id}%::*}
+    add "%uuid of event-entity%" to {eg::round-chick::%{_owner-id}%::*}
     send action bar "&e계란도박 &8| &f%{eg::throws::%{_owner-id}%}%&7/{@eg-eggs-per-round} &8| &e새끼 닭 %{eg::chicks::%{_owner-id}%}%마리" to {_owner}
 
 command /egg-gamble-egg [<number>]:
