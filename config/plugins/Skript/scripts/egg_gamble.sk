@@ -3,7 +3,7 @@ options:
     eg-egg-name: &e도박용 계란
     eg-egg-lore: &7egg-gamble
     eg-eggs-per-round: 10
-    eg-emeralds-per-bundle: 5
+    eg-emeralds-per-bundle: 1
     eg-result-seconds: 5
     eg-track-radius: 48
 
@@ -22,12 +22,21 @@ function egPayout(chicks: number) :: number:
         return 50
     return 50
 
+function egLocationKey(loc: location) :: text:
+    return "%world of {_loc}%:%x-coordinate of {_loc}%:%y-coordinate of {_loc}%:%z-coordinate of {_loc}%"
+
+function egRecentButtonPlayer() :: player:
+    if {eg::button-buyer} is not set:
+        return nothing
+    loop all players:
+        if "%uuid of loop-player%" is "%{eg::button-buyer}%":
+            return loop-player
+    return nothing
+
 function egIsGambleEgg(i: item) :: boolean:
     if {_i} is not egg:
         return false
-    if name of {_i} is not colored "{@eg-egg-name}":
-        return false
-    if lore of {_i} does not contain colored "{@eg-egg-lore}":
+    if "%name of {_i}%" does not contain "도박용 계란":
         return false
     return true
 
@@ -88,6 +97,20 @@ on right click with egg:
         wait 2 ticks
         egFinishRound(player)
 
+on right click:
+    if event-block is not set:
+        stop
+    if "%event-block%" does not contain "button":
+        stop
+    set {_key} to egLocationKey(location of event-block)
+    if {eg::buy-button::%{_key}%} is not true:
+        stop
+
+    set {eg::button-buyer} to "%uuid of player%"
+    wait 2 seconds
+    if {eg::button-buyer} is "%uuid of player%":
+        delete {eg::button-buyer}
+
 on spawn of chicken:
     if spawn reason is not egg:
         stop
@@ -116,14 +139,21 @@ on spawn of chicken:
     add "%uuid of event-entity%" to {eg::round-chick::%{_owner-id}%::*}
     send action bar "&e계란도박 &8| &f%{eg::throws::%{_owner-id}%}%&7/{@eg-eggs-per-round} &8| &e새끼 닭 %{eg::chicks::%{_owner-id}%}%마리" to {_owner}
 
-command /egg-gamble-egg <player>:
+command /egg-gamble-egg [<player>]:
     trigger:
         if sender is a player:
             if sender is not op:
                 send "{@eg-prefix}&c이 명령어는 운영자 또는 커맨드 블럭만 사용할 수 있습니다." to sender
                 stop
 
-        set {_target} to arg-1
+        if arg-1 is set:
+            set {_target} to arg-1
+        else:
+            set {_target} to egRecentButtonPlayer()
+        if {_target} is not set:
+            send "{@eg-prefix}&c구매 버튼을 누른 플레이어를 찾을 수 없습니다." to sender
+            stop
+
         set {_amount} to {@eg-eggs-per-round}
         set {_cost} to {@eg-emeralds-per-bundle}
         if {_target} does not have {_cost} of emerald:
@@ -134,6 +164,25 @@ command /egg-gamble-egg <player>:
         set {_egg} to egg named colored "{@eg-egg-name}" with lore colored "{@eg-egg-lore}"
         give {_amount} of {_egg} to {_target}
         send "{@eg-prefix}&a에메랄드 %{_cost}%개&7를 지불하고 &f도박용 계란 %{_amount}%개&7를 구매했습니다." to {_target}
+
+command /egg-gamble-button:
+    permission: op
+    trigger:
+        set {_b} to targeted block
+        if {_b} is not set:
+            send "{@eg-prefix}&c구매 버튼으로 등록할 버튼을 바라본 뒤 다시 실행하세요." to player
+            stop
+        if "%{_b}%" does not contain "button":
+            send "{@eg-prefix}&c버튼 블록만 등록할 수 있습니다." to player
+            stop
+
+        set {_key} to egLocationKey(location of {_b})
+        if {eg::buy-button::%{_key}%} is true:
+            delete {eg::buy-button::%{_key}%}
+            send "{@eg-prefix}&7바라본 버튼의 구매 버튼 등록을 해제했습니다." to player
+        else:
+            set {eg::buy-button::%{_key}%} to true
+            send "{@eg-prefix}&a바라본 버튼을 계란 구매 버튼으로 등록했습니다." to player
 
 command /egg-gamble-reset:
     permission: op
