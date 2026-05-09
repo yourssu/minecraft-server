@@ -25,7 +25,7 @@ function egPayout(chicks: number) :: number:
 function egLocationKey(loc: location) :: text:
     return "%world of {_loc}%:%x-coordinate of {_loc}%:%y-coordinate of {_loc}%:%z-coordinate of {_loc}%"
 
-function egRecentButtonPlayer() :: player:
+function egRecentButtonPlayer() :: object:
     if {eg::button-buyer} is not set:
         return nothing
     loop all players:
