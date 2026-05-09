@@ -30,6 +30,7 @@
 |------|--------|------|
 | 라운드당 계란 수 | `10` | 10개째 도박용 계란을 던지면 정산 |
 | 계란 10개 구매 가격 | `1 emerald` | `/egg-gamble-egg` 실행 시 차감 |
+| 마지막 계란 집계 대기 | `3 seconds` | 10번째 계란 투척 후 닭 생성 카운트를 기다리는 시간 |
 | 결과 유지 시간 | `5 seconds` | 정산 후 닭 제거 전까지 유지 |
 | 닭 추적 반경 | `48 blocks` | 최근 투척 위치 근처에서 생성된 닭을 라운드에 귀속 |
 
@@ -111,6 +112,7 @@ options:
     eg-egg-lore: &7egg-gamble
     eg-eggs-per-round: 10
     eg-emeralds-per-bundle: 1
+    eg-settle-seconds: 3
     eg-result-seconds: 5
     eg-track-radius: 48
 ```

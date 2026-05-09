@@ -4,6 +4,7 @@ options:
     eg-egg-lore: &7egg-gamble
     eg-eggs-per-round: 10
     eg-emeralds-per-bundle: 1
+    eg-settle-seconds: 3
     eg-result-seconds: 5
     eg-track-radius: 48
 
@@ -44,6 +45,7 @@ function egResetRound(p: player):
     set {_id} to uuid of {_p}
     delete {eg::throws::%{_id}%}
     delete {eg::chicks::%{_id}%}
+    delete {eg::finishing::%{_id}%}
     delete {eg::settling::%{_id}%}
     delete {eg::last-throw::%{_id}%}
     delete {eg::round-chick::%{_id}%::*}
@@ -53,6 +55,7 @@ function egFinishRound(p: player):
     if {eg::settling::%{_id}%} is true:
         stop
 
+    delete {eg::finishing::%{_id}%}
     set {eg::settling::%{_id}%} to true
     set {_chicks} to {eg::chicks::%{_id}%}
     if {_chicks} is not set:
@@ -92,13 +95,18 @@ on right click with egg:
         cancel event
         send "{@eg-prefix}&c이전 결과 정리 중입니다. 잠시 후 다시 시도하세요." to player
         stop
+    if {eg::finishing::%{_id}%} is true:
+        cancel event
+        send "{@eg-prefix}&c마지막 계란 결과를 집계 중입니다. 잠시 후 다시 시도하세요." to player
+        stop
 
     add 1 to {eg::throws::%{_id}%}
     set {eg::last-throw::%{_id}%} to location of player
     send action bar "&e계란도박 &8| &f%{eg::throws::%{_id}%}%&7/{@eg-eggs-per-round} &8| &e새끼 닭 %{eg::chicks::%{_id}%}%마리" to player
 
     if {eg::throws::%{_id}%} >= {@eg-eggs-per-round}:
-        wait 2 ticks
+        set {eg::finishing::%{_id}%} to true
+        wait {@eg-settle-seconds} seconds
         egFinishRound(player)
 
 on right click:
